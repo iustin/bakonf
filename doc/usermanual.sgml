@@ -3,7 +3,7 @@
     <titlepag>
       <title>bakonf - a configuration file backup tool</title>
       <author><name>Iustin Pop &lt;iusty@k1024.org&gt;</name></author>
-      <date>$Id: usermanual.sgml,v 1.2 2002/12/14 17:19:48 iusty Exp $</date>
+      <date>$Id: usermanual.sgml,v 1.3 2002/12/17 02:11:03 iusty Exp $</date>
       <abstract>This document explains the concept and usage of bakonf, a system backup tool which backs up only the configuration files on a system.</abstract>
     </titlepag>
     <sect><heading>Introduction</heading>
@@ -23,6 +23,15 @@
     <sect>
       <heading>What does bakonf do?</heading>
       <p>You can regard bakonf as a rescue archive creator. It creates an archive of <em>modified</em> configuration files. It uses the system's packaging tool to see which files have been changed since their installation or which files do not come from any package, and creates an archive out of them. Also, it stored in the generated archives some other information I thought is important and is not found in the filesystem, like package list, version of the running kernel. In the future I'll add some more.</p>
+      <sect1>
+        <heading>What can I use bakonf for?</heading>
+        <p>At least for:
+           <itemize>
+            <item>Configuration rollback. Since the archives are small, you can keep many versions, but unlike in differential backup, here one archive contains all the needed data.</item>
+            <item>Configuration cloning. You can take a bakonf-generated archive from one system to another and 'clone' as much of the settings as you want.</item>
+            <item>Quick restore of a server in case of catastrofic harddisk failure. Just reinstall the OS and put the config files back.</item>
+          </itemize>
+      </sect1>
       <sect1>
         <heading>Where is bakonf usable?</heading>
 <p>At the moment, only on a distribution which uses rpm 4.1 and has the rpm-python bindings installed. It has been designed to handle any Unix system is full package based, and could be used for any Unix distribution (but in this case it would make a full backup of the configuration files everytime).</p>
@@ -73,6 +82,8 @@ include /etc/bakonf/sources/*.sources
     </sect>
     <sect>
       <heading>Using bakonf</heading>
+      <sect1>
+        <heading>Backup phase</heading>
       <p>To use bakonf, choose to either:
         <itemize>
           <item>run it manually, when you want</item>
@@ -80,6 +91,29 @@ include /etc/bakonf/sources/*.sources
         </itemize>
 </p>
       <p>In any case, you have to do something with the generated archives. Write the to floppy, tape, CD, other machine, but don't just ignore them, you defeat the purpose of bakonf.</p>
+      </sect1>
+      <sect1>
+        <heading>Restore phase</heading>
+        <sect2>
+          <heading>Configuration rollback</heading>
+          <p>In this case, just make sure you have the bakonf-generated archive near the date in the past you are interested in. If so:
+            <enum>
+              <item>compare the actual package list with the one recorded by bakonf when it created the archive</item>
+              <item>install/remove packages as needed</item>
+              <item>copy the configuration files for the services you want to rollback over the current files</item>
+            </enum>
+           </p>
+        </sect2>
+        <sect2>
+          <heading>Complete system restoration</heading>
+          <p>If you had a catastrophical failure, you should follow these steps:
+             <enum>
+              <item>Reinstall the operating system on a clean machine. Use the given information in the <tt>/meta</tt> directory in the archive to achieve an as close as possible configuration as the old system (e.g. partition layout, packages installed, etc.)</item>
+              <item>Copy all the files in the archive in the filesystem, overwriting the defaults from the packages.</item>
+            </enum>
+          </p>
+        </sect2>
+      </sect1>
     </sect>
   </article>
 </linuxdoc>
