@@ -3,7 +3,7 @@
     <titlepag>
       <title>bakonf - a configuration file backup tool</title>
       <author><name>Iustin Pop &lt;iusty@k1024.org&gt;</name></author>
-      <date>$Id: usermanual.sgml,v 1.1 2002/12/12 09:12:18 iusty Exp $</date>
+      <date>$Id: usermanual.sgml,v 1.2 2002/12/14 17:19:48 iusty Exp $</date>
       <abstract>This document explains the concept and usage of bakonf, a system backup tool which backs up only the configuration files on a system.</abstract>
     </titlepag>
     <sect><heading>Introduction</heading>
@@ -22,7 +22,7 @@
     </sect>
     <sect>
       <heading>What does bakonf do?</heading>
-      <p>bakonf creates an archive of <em>modified</em> configuration files. It uses the system's packaging tool to see which files have been changed since their installation or which files do not come from any package, and creates an archive out of them.</p>
+      <p>You can regard bakonf as a rescue archive creator. It creates an archive of <em>modified</em> configuration files. It uses the system's packaging tool to see which files have been changed since their installation or which files do not come from any package, and creates an archive out of them. Also, it stored in the generated archives some other information I thought is important and is not found in the filesystem, like package list, version of the running kernel. In the future I'll add some more.</p>
       <sect1>
         <heading>Where is bakonf usable?</heading>
 <p>At the moment, only on a distribution which uses rpm 4.1 and has the rpm-python bindings installed. It has been designed to handle any Unix system is full package based, and could be used for any Unix distribution (but in this case it would make a full backup of the configuration files everytime).</p>
@@ -30,30 +30,56 @@
     </sect>
     <sect>
       <heading>Configuration</heading>
-      <p>bakonf uses a main configuration file <tt>/etc/bakonf/bakonf.cfg</tt>, which does some standard settings and tells bakonf what other files to include. These additional files are usually locate in <tt>/etc/bakonf/sources</tt> and tell bakonf how to handle some special cases.</p>
+      <p>bakonf uses a main configuration file <tt>/etc/bakonf/bakonf.conf</tt>, which does some standard settings and tells bakonf what other files to include. These additional files are usually locate in <tt>/etc/bakonf/sources</tt> and tell bakonf how to handle some special cases.</p>
       <sect1>
         <heading>Configuration language</heading>
         <p>It's not really a language, it is simply:
           <descrip>
-            <tag>&num; COMMENT</tag>comments begin with &num; and extend to the end of the line
-            <tag>include <tt>PATTERN</tt></tag>tell bakonf to also parse any files which match shell pattern PATTERN.
-            <tag>sysitem <tt/PATTERN/</tag>tell bakonf to add any file or directory which matched shell pattern <tt/PATTERN/ to its include list.
+            <tag>&num; COMMENT</tag>comments begin with &num; and extend to the end of the line.
+            <tag>include <tt/BAKONF_CONFIGFILE_PATTERN/</tag>tell bakonf to also parse any files which match the given shell pattern. These are files which modify bakonf's own behavior, and are usually located in /etc/bakonf/sources. These are not directories to be backed up! (Altough, if modified, they will be, since are located under /usr).
+            <tag>sysitem <tt/PATTERN/</tag>tell bakonf to add any file or directory which matched shell pattern <tt/PATTERN/ to its include list. These can be files or directories. Bakonf will descend directories, but will <em>follow</em> symbolic links! The symlinks are considered configuration items also, so they will be backeup up themselves.
             <tag>excludeitem <tt/REGEXP/</tag>tell bakonf to ignore any file or directory which matches the regular expression REGEXP from analysing.
           </descrip>
+          The order of precedence for sysitem/excludeitem is:
+<itemize>
+            <item>bakonf will start scanning all items defined with sysitem</item>
+            <item>if at any point in the filesystem scan, the current file/directory mathes any one of excludeitem REGEXPs, the scan will ignore it. For directories, that means ignoring all the files they contain, so please be careful about it.</item>
+          </itemize>
           I have used a customized version of Python's shlex class. For more details, run pydoc on the bakonf.py source.</p>
         <p>Using these, you can select where you want bakonf to look for files for archiving. The default config file includes <tt>/etc</tt>, <tt>/usr/etc</tt>, <tt>/usr/local/etc</tt> and some others (look in <tt>/etc/bakonf</tt> after installing).
+        <p>Example configuration file (the file included in the distribution):
+      <code>
+# Standard directories
+sysitem /etc
+sysitem /usr/etc
+sysitem /usr/local/etc
+sysitem /var/lib/alternatives
+# Include the custom cases
+include /etc/bakonf/sources/*.sources
+</code>
+      </sect1>
+      <sect1>
+        <heading>File list</heading>
+        <p>bakonf is composed of:
+        <descrip>
+            <tag><tt>/etc/bakonf/bakonf.conf</tt></tag>Main configuration file.
+            <tag><tt>/etc/bakonf/sources/*.sources</tt></tag>Configuration files for special cases (config files outside of etc dirs).
+            <tag><tt>/usr/sbin/bakonf.py</tt></tag>Main program
+            <tag><tt>/etc/cron.d/bakonf</tt></tag>Cron file, by default it does not run bakonf, you must uncomment a line to run it.
+            <tag><tt>/var/lib/bakonf/archives</tt></tag>Default directory for configuration file archives.
+          </descrip>
+        <bf>Note:</bf>You must decide yourself what to do with the configuration archives after bakonf creates them!
       </sect1>
     </sect>
     <sect>
       <heading>Using bakonf</heading>
-      <p>bakonf is composed of:
-        <descrip>
-          <tag><tt>/etc/bakonf/*</tt></tag>Configuration files
-          <tag><tt>/usr/sbin/bakonf.py</tt></tag>Main program
-          <tag><tt>/etc/cron.daily</tt></tag>Cron file, by default it does not run bakonf, you must uncomment a line to run it.
-          <tag><tt>/var/lib/bakonf</tt></tag>Default directory for configuration file archives.
-        </descrip>
-        <bf>Note:</bf>You must decide yourself what to do with the configuration archives after bakonf creates them!
+      <p>To use bakonf, choose to either:
+        <itemize>
+          <item>run it manually, when you want</item>
+          <item>use the provided cron script to run it autmatically, or create your own</item>
+        </itemize>
+</p>
+      <p>In any case, you have to do something with the generated archives. Write the to floppy, tape, CD, other machine, but don't just ignore them, you defeat the purpose of bakonf.</p>
     </sect>
   </article>
 </linuxdoc>
