@@ -30,8 +30,8 @@ metadata (like installed packages, etc.)
 __version__ = "$Revision: 1.12 $"
 PKG_VERSION = "0.5.1"
 DB_VERSION  = "1"
-# $URL: /alte/cvsroot/bakonf/bakonf.py,v $
-# $Id: bakonf.py,v 1.12 2002/12/20 01:56:22 iusty Exp $
+# $URL$
+# $Id$
 
 from __future__ import generators
 
