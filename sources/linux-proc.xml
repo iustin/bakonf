@@ -13,7 +13,7 @@
     <storeoutput command="cat /proc/cpuinfo" destination="proc/cpuinfo"/>
     <storeoutput command="cat /proc/partitions" destination="proc/partitions"/>
     <!-- Also hardware information -->
-    <storeoutput command="/sbin/lspci -vv" destination="lspci.txt"/>
-    <storeoutput command="/sbin/lsusb -vv" destination="lsusb.txt"/>
+    <storeoutput command="lspci -vv" destination="lspci.txt"/>
+    <storeoutput command="lsusb -vv" destination="lsusb.txt"/>
 </metadata>
 </bakonf>

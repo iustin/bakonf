@@ -1,5 +1,5 @@
 NAME=bakonf
-VERSION=0.5
+VERSION=0.5.1
 DISTDIR=$(NAME)-$(VERSION)
 install:
 	install -d -m 0700 $(DESTDIR)/etc/bakonf
@@ -32,7 +32,7 @@ dist:
 	rm -rf $(DISTDIR)
 
 rpm:
-	rpm -ta $(NAME)-$(VERSION).tar.gz
+	rpmbuild -ta $(NAME)-$(VERSION).tar.gz
 
 changelog:
 	rm ChangeLog || true

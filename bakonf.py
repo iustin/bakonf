@@ -28,13 +28,19 @@ metadata (like installed packages, etc.)
 """
 
 __version__ = "$Revision: 1.12 $"
-PKG_VERSION = "0.5"
+PKG_VERSION = "0.5.1"
 DB_VERSION  = "1"
-# $Source: /alte/cvsroot/bakonf/bakonf.py,v $
+# $URL: /alte/cvsroot/bakonf/bakonf.py,v $
 # $Id: bakonf.py,v 1.12 2002/12/20 01:56:22 iusty Exp $
 
 from __future__ import generators
-from optik import OptionParser
+
+import sys
+if sys.hexversion >= 0x020300F0:
+    from optparse import OptionParser
+else:
+    from optik import OptionParser
+
 import md5, sha, stat, os, sys, pwd, grp, types, glob, re
 import time, StringIO, xml.dom.minidom, commands
 import tarfile, bsddb
@@ -380,7 +386,7 @@ class FileManager(object):
 
         """
 
-        key = "file:/%s" % name
+        key = "file:/%s" % str(name)
         if self.virtualsdb.has_key(key):
             virtualdata = self.virtualsdb[key]
         else:
@@ -486,7 +492,7 @@ class FileManager(object):
         # If a file hasn't been found (as it is with directories), the
         # worst case is that we ignore that we backed up that file.
         if self.backuplevel == 0 and path in self.subjects:
-            self.virtualsdb["file:/%s" % path] = self.subjects[path].serialize()
+            self.virtualsdb["file:/%s" % str(path)] = self.subjects[path].serialize()
 
     def close(self):
         """Ensure database has been written to disc."""
