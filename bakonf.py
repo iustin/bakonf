@@ -17,20 +17,22 @@
 
 """Configuration backup program.
 
-This program backs up the configuration files in a Linux (Unix)
-system. It does this by examining a list of directories for files
-which have been modified since installation (determined, for now, only
-for RPM-based systems) and creates a file list suitable to be used
-with tar or star.
+This program backs up the configuration files in a GNU/Linux or other
+Unix-like system. It does this by examining a list of directories for
+files which have been modified since installation (determined, for
+now, only for RPM-based systems) and creates a file list suitable to
+be used with tar or star. Then it proceeds in creating that archive,
+including in it the modified configuration file and some other
+metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.1 $"
+__version__ = "$Revision: 1.2 $"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
 
 from __future__ import generators
 from optik import OptionParser
-import rpm, md5, stat, os, sys, pwd, grp, types, glob, shlex, re
+import rpm, md5, stat, os, sys, pwd, grp, types, glob, shlex, re, time
 
 def enumerate(collection):
     'Generates an indexed series:  (0,coll[0]), (1,coll[1]) ...'     
@@ -232,10 +234,13 @@ class SubjectFile(object):
 class BackupManager(object):
     """Class which deals with overall issues of selecting files
     for backup."""
-    def __init__(self, options):
+    def __init__(self, configfile="/etc/bakonf/bakonf.cfg", filename
+                 = "filenames.lst", separator="\n"):
         """Constructor for class BackupManager."""
         self.ts = rpm.TransactionSet()
-        self.options = options
+        self.configfile = configfile
+        self.filename = filename
+        self.separator = separator
         
     def _findfile(self, name):
         """Locate a file's entry in the package database.
@@ -330,14 +335,14 @@ class BackupManager(object):
     def _writelist(self):
         """Writes a list of filenames to the configured
         output file."""
-        fh = file(self.options.output, "w")
+        fh = file(self.filename, "w")
         pathlist = []
         for path in self.filelist:
             self._addparents(path, pathlist)
         for path in pathlist:
-            fh.write("%s%s" % (path, self.options.separator))
+            fh.write("%s%s" % (path, self.separator))
         for path in self.filelist:
-            fh.write("%s%s" % (path, self.options.separator))
+            fh.write("%s%s" % (path, self.separator))
         fh.close()
         
     def _parsecfg(self):
@@ -345,7 +350,7 @@ class BackupManager(object):
         
         lst = []
         excl = []
-        g = GlobLex(file(self.options.configfile, 'r'), self.options.configfile)
+        g = GlobLex(file(self.configfile, 'r'), self.configfile)
         #g.debug=1
         g.wordchars += "*./_-+=^$"
         g.source = "include"
@@ -368,24 +373,30 @@ class BackupManager(object):
         self._writelist()
         
 if __name__ == "__main__":
+    def_file = "%s-%s.tar" % (os.uname()[1], time.strftime("%F"))
+    config_file = "bakonf.cfg"
     op = OptionParser(version = "0.2")
     op.add_option("-c", "--config-file", dest="configfile",
-                  help="configuration FILE", metavar="FILE",
-                  default="bakonf_scanner.cfg")
-    op.add_option("-f", "--file", dest="output",
-                  help="write file list to FILE [default=filenames.lst]",
-                  metavar="FILE", default="filenames.lst")
+                  help="configuration FILE [%s]" % config_file,
+                  metavar="FILE", default=config_file)
+    op.add_option("-f", "--file", dest="file",
+                  help="name of the ARCHIVE to be generated",
+                  metavar="ARCHIVE", default=def_file)
+    op.add_option("-d", "--dir", dest="dir",
+                  help="DIRECTORY where to store the archive",
+                  metavar="DIRECTORY", default="/var/lib/bakonf")
+    op.add_option("-w", "--work-dir", dest="work",
+                  help="DIRECTORY to use for temporary files (NOT world readable/writable!)",
+                  metavar="DIRECTORY", default=".")
     op.add_option("-n", "--null", dest="separator", action="store_const",
                   const="\0", help="separate the filenames with NULL")
     op.add_option("-l", "--newline", dest="separator", action="store_const",
-                  const="\n", help="separate the filenames with newline",
+                  const="\n", help="separate the filenames with" \
+                  "newline  [default]",
                   default="\n")
-    op.add_option("", "--no-dirs", help="do not include parent dirs of the "
-                  "files as separate entries (needed when tar is called "
-                  "without norecurse)", dest="nodirs", default=0,
-                  action="store_true")
     op.add_option("-v", "--verbose", dest="verbose", action="store_true",
                   help="be verbose in operation", default=0)
     (options, args) = op.parse_args()
-    bm = BackupManager(options)
+    bm = BackupManager(configfile=options.configfile,
+                       separator=options.separator, filename = "" )
     bm.run()
