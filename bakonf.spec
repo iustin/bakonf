@@ -32,7 +32,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-/etc/bakonf
+%dir /etc/bakonf
+%dir /etc/bakonf/sources
+%config /etc/bakonf/bakonf.conf
+%config /etc/bakonf/sources/*.sources
 /usr/sbin/bakonf.py
 /var/lib/bakonf
 %doc /usr/share/doc/%{name}-%{version}
