@@ -1,8 +1,16 @@
-txt: usermanual.txt
-html: usermanual.html
+all: usermanual.ps html usermanual.txt bakonf.8
+
+html: usermanual.sgml
+	db2html usermanual.sgml
+
+man.html:
+	db2html bakonf.sgml
+
+%.8: %.sgml
+	docbook2man $^
 
 %.txt: %.sgml
-	linuxdoc -B txt $^
+	docbook2txt $^
 
-%.html: %.sgml
-	sgml2html -s 0 $^
+%.ps: %.sgml
+	db2ps $^
