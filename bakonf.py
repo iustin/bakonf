@@ -27,7 +27,7 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.12 $"
+__version__ = "$Rev$"
 PKG_VERSION = "0.5.1"
 DB_VERSION  = "1"
 # $URL$
