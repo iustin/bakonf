@@ -27,13 +27,14 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.6 $"
+__version__ = "$Revision: 1.7 $"
+PKG_VERSION = "0.5"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
 
 from __future__ import generators
 from optik import OptionParser
-import rpm, md5, stat, os, sys, pwd, grp, types, glob, shlex, re
-import time, errno, StringIO
+import rpm, md5, sha, stat, os, sys, pwd, grp, types, glob, re
+import time, errno, StringIO, xml.dom.minidom, commands
 import tarfile
 
 def enumerate(collection):
@@ -45,29 +46,33 @@ def enumerate(collection):
         i += 1
 
 
-class GlobLex(shlex.shlex):
-    def sourcehook(self, newfile):
-        if newfile[0] == '"':
-            newfile = newfile[1:-1]
-        flist = glob.glob(newfile)
-        for filename in flist:
-            self.push_source(file(filename, "r"), filename)
-        return None
+class ConfigurationError(Exception):
+    """Exception for invalid configuration files."""
+    def __init__(self, filename, error):
+        Exception.__init__()
+        self.filename = filename
+        self.error = error
+        
+    def __str__(self):
+        return "ConfigurationError in file '%s': %s" % (self.filename, self.error)
 
+    
 class FileState(object):
     """Represents the state of a file.
 
     An instance of this class represents the state of a file, either
-    sinteticaly given (with values from package database) or with
-    values read from the filesystem. If the attributes are not given,
-    they will be lazy-read from the filesystem at the time of the
-    first compare.
+    sinteticaly given (with values from a previously-generated
+    database) or with values read from the filesystem. If the
+    attributes are not given, they will be read from filesystem at
+    init time, and the checksums computed at the time of the first
+    compare.
 
     """
-    #__slots__ = ('name', 'mode', 'user', 'group', 'size', 'mtime', 'lnkdest', '__md5')
+    __slots__ = ('name', 'mode', 'user', 'group', 'size', 'mtime', 'lnkdest', 'virtual', 'force', 'uid', 'gid', '_md5', '_sha')
     
     def __init__(self, name, mode=None, user=None, group=None,
-                 size=None, mtime=None, md5=None, lnkdest=None):
+                 size=None, mtime=None, md5=None, sha=None,
+                 lnkdest=None):
         """Initialize the members of this instance.
         
         If any of the values given is none, the state will be read
@@ -78,14 +83,15 @@ class FileState(object):
         self.name = name
         if mode is not None and user is not None and group is not None and \
                size is not None and mtime is not None and md5 is not None and \
-               lnkdest is not None:
+               sha is not None and lnkdest is not None:
             # This means a fully specified virtual file
             self.mode = mode
             self.user = user
             self.group = group
             self.size = size
             self.mtime = mtime
-            self.__md5 = md5
+            self._md5 = md5
+            self._sha = sha
             self.lnkdest = lnkdest
             self.virtual = 1
             self.force = 0
@@ -105,7 +111,8 @@ class FileState(object):
         self.force = 0
         try:
             self.virtual = 0
-            self.__md5 = None
+            self._md5 = None
+            self._sha = None
             arr = os.lstat(self.name)
             self.mode = arr.st_mode
             self.uid = arr.st_uid
@@ -130,22 +137,28 @@ class FileState(object):
             except KeyError:
                 self.group = self.gid
                 
-    def _readmd5(self):
-        """Compute the md5 hash of the file's contents."""
+    def _readhashes(self):
+        """Compute the hashes of the file's contents."""
+        
         if not self.force and stat.S_ISREG(self.mode):
             try:
-                hash = md5.new()
+                md5hash = md5.new()
+                shahash = sha.new()
                 fh = file(self.name, "r")
                 r = fh.read(65535)
                 while r != "":
-                    hash.update(r)
+                    md5hash.update(r)
+                    shahash.update(r)
                     r = fh.read(65535)
                 fh.close()
-                self.__md5 = hash.hexdigest()
+                self._md5 = md5hash.hexdigest()
+                self._sha = shahash.hexdigest()
             except IOError:
-                self.__md5 = ""
+                self._md5 = ""
+                self._sha = ""
         else:
-            self.__md5 = ""
+            self._md5 = ""
+            self._sha = ""
             
     def __eq__(self, other):
         """Compare this entry with another one, usually for the same file.
@@ -158,6 +171,8 @@ class FileState(object):
         """
         if type(self) != type(other):
             return NotImplemented
+        if self.virtual == other.virtual:
+            raise "Comparison of two files of the same kind (virtual or non-virtual)!"
         if self.force or other.force:
             return 0
         if stat.S_ISLNK(self.mode) and stat.S_ISLNK(other.mode):
@@ -167,7 +182,7 @@ class FileState(object):
             # Both files are regular files
             # I hope here python optimizes in cases where the sizes differ,
             # and doesn't read the md5 in case it is not needed :)
-            return self.size == other.size and self.md5 == other.md5
+            return self.size == other.size and self.md5 == other.md5 #and self.sha == other.sha
         else:
             return 0
         return 0
@@ -182,7 +197,7 @@ class FileState(object):
         if self.force:
             ret += ", unreadable -> will be selected>"
         else:
-            ret += ", u/g: %s/%s, md5: %s, mtime: %u>" % (self.user, self.group, self.md5, self.mtime)
+            ret += ", size: %u, u/g: %s/%s, md5: %s, sha: %s, mtime: %u>" % (self.size, self.user, self.group, self.md5, self.sha, self.mtime)
         return ret
 
     def getmd5(self):
@@ -193,16 +208,34 @@ class FileState(object):
         return it.
 
         """
-        if self.__md5 is None:
+        if self._md5 is None:
             if not self.virtual and not self.force and stat.S_ISREG(self.mode):
-                self._readmd5()
-                return self.__md5
+                self._readhashes()
+                return self._md5
             else:
                 return ""
         else:
-            return self.__md5
+            return self._md5
+
+    def getsha(self):
+        """Getter function for the SHA hash.
+
+        This function looks to see if we already computed the hash,
+        and in that case just return it. Otherwise, compute it now and
+        return it.
+
+        """
+        if self._sha is None:
+            if not self.virtual and not self.force and stat.S_ISREG(self.mode):
+                self._readhashes()
+                return self._sha
+            else:
+                return ""
+        else:
+            return self._sha
 
     md5 = property(fget=getmd5, doc="The MD5 hash of the file's contents")
+    sha = property(fget=getsha, doc="The SHA hash of the file's contents")
 
         
 class SubjectFile(object):
@@ -218,10 +251,11 @@ class SubjectFile(object):
         if len(fi) == 1:
             self.force = 1
             self.name = fi[0]
-            self.virtualstate = self.physicalstate = None
+            self.virtualstate = None
+            self.physicalstate = FileState(self.name)
         else:
             (self.name, virtsize, virtmode, virtmtime, virtlnkdest, virtuser, virtgroup, virtmd5) = fi
-            self.virtualstate = FileState(self.name, md5 = virtmd5, user = virtuser, group = virtgroup, size = virtsize, lnkdest = virtlnkdest, mode = virtmode, mtime = virtmtime)
+            self.virtualstate = FileState(self.name, md5 = virtmd5, user = virtuser, group = virtgroup, size = virtsize, lnkdest = virtlnkdest, mode = virtmode, mtime = virtmtime, sha = "")
             self.physicalstate = FileState(self.name)
             self.force = 0
         
@@ -233,13 +267,15 @@ class SubjectFile(object):
         """Checks whether this file needs backup."""
         return self.force or self.virtualstate != self.physicalstate
 
-class BackupManager(object):
+class FileManager(object):
     """Class which deals with overall issues of selecting files
     for backup."""
-    def __init__(self, configfile="/etc/bakonf/bakonf.conf"):
+    def __init__(self, scanlist, excludelist):
         """Constructor for class BackupManager."""
         self.ts = rpm.TransactionSet()
-        self.configfile = configfile
+        self.scanlist = scanlist
+        self.excludelist = map(re.compile, excludelist)
+        self.errorlist = []
         
     def _findfile(self, name):
         """Locate a file's entry in the package database.
@@ -278,7 +314,8 @@ class BackupManager(object):
             try:
                 statres = os.lstat(fullpath)
             except OSError, e:
-                print "Cannot stat file %s, reason: '%s'. Will not be archived." % (fullpath, e.strerror)
+                self.errorlist.append((fullpath, e.strerror))
+                print >>sys.stderr, "Cannot stat file %s, reason: '%s'. Will not be archived." % (fullpath, e.strerror)
             else:
                 if not stat.S_ISDIR(statres.st_mode):
                     a = self._findfile(fullpath)
@@ -316,7 +353,7 @@ class BackupManager(object):
     def _checksources(self):
         """Examine the list of sources and process them."""
         biglist = []
-        for item in self.srclist:
+        for item in self.scanlist:
             if self._isexcluded(item):
                 continue
             st = os.lstat(item)
@@ -350,34 +387,13 @@ class BackupManager(object):
             pathlist.append(path)
         self.memberlist = pathlist
         
-    def _parsecfg(self):
-        """Parses the configuration files, reading the list of sources to use."""
-        
-        lst = []
-        excl = []
-        g = GlobLex(file(self.configfile, 'r'), self.configfile)
-        #g.debug=1
-        g.wordchars += "*./_-+=^$"
-        g.source = "include"
-        token = g.get_token()
-        while token != '':
-            if token == "sysitem":
-                lst.extend(glob.glob(g.get_token()))
-            elif token == "excludeitem":
-                excl.append(re.compile(g.get_token()))
-            else:
-                print "Unknown token %s!" % token
-            token = g.get_token()
-        self.srclist = lst
-        self.excludelist = excl
-
     def run(self):
-        """Do the thing."""
-        self._parsecfg()
+        """Run the selection process."""
         self._checksources()
         self._makelist()
 
     def writepkglist(self, fhandle):
+        """Write the rpm package list in the fhandle fileobject."""
         lst = []
         mi = self.ts.dbMatch()
         hdr = mi.next()
@@ -387,7 +403,224 @@ class BackupManager(object):
         lst.sort()
         for line in lst:
             fhandle.write("%s\n" % line)
+
+class MetaOutput(object):
+    """Denoted a meta-information to be stored in an archive.
+
+    This class represents the element storeoutput in the configuration
+    file. It will store the output of a command in the archive.
+
+    """
+    def __init__(self, command, destination):
+        """Constructor for the MetaOutput class."""
+        self.command = command
+        self.destination = destination
+        if self.destination.startswith("/"):
+            self.destination = self.destination[1:]
+        self.errors = None
+
+    def store(self, archive):
+        """Store the output of my command in the archive."""
+        nret = 1
+        (status, output) = commands.getstatusoutput(self.command)
+        if not os.WIFEXITED(status) or not os.WEXITSTATUS(status) == 0:
+            if os.WIFEXITED(status):
+                err = "exited with status %i" % os.WEXITSTATUS(status)
+            elif os.WIFSIGNALED(status):
+                err = "was killed with signal %i" % os.WTERMSIG(status)
+            elif os.WIFSTOPPED(status):
+                err = "was stopped with signal %i" % os.WSTOPSIG(status)
+            else:
+                err = "unknown status code %i" % status
+            self.errors = (self.command, err)
+            nret = 0
+            print >>sys.stderr, "Warning: command '%s' %s. Output is still stored in the archive" % (self.command, err)
+        fhandle = StringIO.StringIO()
+        fhandle.write(output)
+        ti = genfakefile(fhandle, name=os.path.join("meta", self.destination))
+        archive.addfile(ti, fhandle)
+        return nret
         
+class BackupManager(object):
+    """Main class for this program.
+
+    Class which deals with top-level issues regarding archiving:
+    creation of the archive, parsing of configuration files, storing
+    meta-informations, etc.
+
+    """
+    def __init__(self, options):
+        """Constructor for BackupManager."""
+        self.options = options
+        self._parseconf(options.configfile)
+
+    def _getdoms(cls, dom):
+        """Helper for the _parseconf.
+
+        This function scans the given DOM for top-level elements with
+        tagName equal to 'include' and adds to the to-be-parsed list
+        the files matching shell-patern of the path attribute.
+
+        """
+        if dom.firstChild.tagName != "bakonf":
+            dom.unlink()
+            return []
+
+        domlist = [dom]
+        cfgs = [glob.glob(incl.getAttribute("path")) for incl in
+                dom.firstChild.getElementsByTagName("include")]
+        paths = reduce(lambda x,y: x+y, cfgs, [])
+        for fname in paths:
+            childdom = xml.dom.minidom.parse(fname)
+            if childdom.firstChild.tagName != "bakonf":
+                childdom.unlink()
+                continue
+            domlist.append(childdom)
+        return domlist
+
+    _getdoms = classmethod(_getdoms)
+
+    def _parseconf(self, filename):
+        """Parse the configuration file."""
+        self.fs_include = []
+        self.fs_exclude = []
+        self.meta_outputs = []
+        
+        masterdom = xml.dom.minidom.parse(filename)
+
+        if masterdom.firstChild.tagName != "bakonf":
+            raise ConfigurationError(filename, "XML file root is not bakonf")
+
+        doms = BackupManager._getdoms(masterdom)
+
+        for de in doms:
+            for fses in de.firstChild.getElementsByTagName("filesystem"):
+                for scans in fses.getElementsByTagName("scan"):
+                    path = scans.getAttribute("path")
+                    #print "Will scan %s=%s" % (path, glob.glob(path))
+                    self.fs_include += map(os.path.abspath, glob.glob(path))
+                for regexcl in fses.getElementsByTagName("noscan"):
+                    #print "Will exclude %s" % regexcl.getAttribute("regex")
+                    self.fs_exclude.append(regexcl.getAttribute("regex"))
+
+            for metas in de.firstChild.getElementsByTagName("meta"):
+                for cmdouts in metas.getElementsByTagName("storeoutput"):
+                    #print "Will store the output of %s in file %s" % (cmdouts.getAttribute("command"), cmdouts.getAttribute("destination"))
+                    self.meta_outputs.append(MetaOutput(cmdouts.getAttribute("command"), cmdouts.getAttribute("destination")))
+
+            de.unlink()
+
+    def _addfilesys(self, archive):
+        """Add the selected files to the archive.
+
+        This function adds the files which need to be backed up to the
+        archive. If any file cannot be opened, it will be listed in
+        /unarchived_files.lst.
+
+        """
+        verbose = self.options.verbose
+        if verbose:
+            stime = time.time()
+            print "Scanning files..."
+        fm = FileManager(self.fs_include, self.fs_exclude)
+        fm.run()
+        errorlist = list(fm.errorlist)
+        fs_list = fm.memberlist
+        if verbose:
+            ntime = time.time()
+            print "Done scanning, in %.2f seconds" % (ntime - stime)
+            print "Archiving files..."
+        archive.add(name="/", arcname="filesystem/", recursive=0)
+        for path in fs_list:
+            if path.startswith("/"):
+                arcx = os.path.join("filesystem", path[1:])
+            else:
+                arcx = os.path.join("filesystem", path)
+            try:
+                archive.add(name=path, arcname=arcx, recursive=0)
+            except IOError, e:
+                errorlist.append((path, e.strerror))
+                print >>sys.stderr, "Cannot read file %s, error: '%s'. Will not be archived." % (path, e.strerror)
+        if verbose:
+            ptime = time.time()
+            print "Done archiving files, in %.2f seconds." % (ptime - ntime)
+        sio = StringIO.StringIO()
+        for (filename, error) in errorlist:
+            sio.write("'%s'\t'%s'\n" % (filename, error))
+        fh = genfakefile(sio, name="unarchived_files.lst")
+        archive.addfile(fh, sio)
+
+    def _addmetas(self, archive):
+        """Add the metainformations to the archive.
+
+        This functions adds the configured metainformations to the
+        archive. If any command exits with status non-zero, or other
+        error is encountered, its output will still be listed in the
+        archive, but the command and its status will be listed in
+        /commands_with_error.lst file.
+
+        """
+        errorlist = []
+        for meta in self.meta_outputs:
+            if not meta.store(archive):
+                errorlist.append(meta.errors)
+        sio = StringIO.StringIO()
+        for (cmd, error) in errorlist:
+            sio.write("'%s'\t'%s'\n" % (cmd, error))
+        fh = genfakefile(sio, name="commands_with_errors.lst")
+        archive.addfile(fh, sio)
+        
+            
+    def run(self):
+        """Create the archive.
+
+        This method creates the archive with the given options from
+        the command line and the configuration file.
+        
+        """
+        final_tar = os.path.join(self.options.destdir, "%s.tar" % options.archive_id)
+        if options.compression == 1:
+            tarmode = "w:gz"
+            final_tar += ".gz"
+        elif options.compression == 2:
+            tarmode = "w:bz2"
+            final_tar += ".bz2"
+        else:
+            tarmode = "w"
+        if options.file is not None:
+            final_tar = os.path.abspath(options.file)
+        tarh = tarfile.open(name=final_tar, mode=tarmode)
+        tarh.posix = 0 # Need to work around 100 char filename length
+
+        my_hostname = os.uname()[1]
+        signature = """Archive generated by bakonf ver. %s - www.nongnu.org/bakonf\nHost: %s\nDate: %s\nOptions:""" % (PKG_VERSION, my_hostname, time.strftime("%F %T%z"))
+
+        # Archiving files
+        if options.do_files:
+            signature += " do_filesystem"
+            self._addfilesys(tarh)
+
+        # Add metainformations
+        if options.do_metas:
+            signature += " do_metainformations"
+            self._addmetas(tarh)
+
+        signature += "\n"
+        # Add readme stuff
+        if options.verbose:
+            print signature,
+        sio = StringIO.StringIO(signature)
+        fh = genfakefile(sio, "README")
+        tarh.addfile(fh, sio)
+        
+        # Done with the archive
+        tarh.close()
+
+        if options.verbose:
+            statres = os.stat(final_tar)
+            print "Archive generated at '%s', size %i." % (final_tar, statres.st_size)
+        
+
 def genfakefile(sio=None, name = None, user='root', group='root', mtime=None):
     """Generate a fake TarInfo object from a StringIO object."""
     ti = tarfile.TarInfo()
@@ -406,8 +639,8 @@ if __name__ == "__main__":
     my_hostname = os.uname()[1]
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
     def_file = "%s.tar" % archive_id
-    config_file = "/etc/bakonf/bakonf.conf"
-    op = OptionParser(version="%prog 0.4.1\nWritten by Iustin Pop\n\nCopyright (C) 2002 Iustin Pop\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.", usage="""usage: %prog [options]
+    config_file = "/etc/bakonf/bakonf.xml"
+    op = OptionParser(version="%%prog %s\nWritten by Iustin Pop\n\nCopyright (C) 2002 Iustin Pop\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE." % PKG_VERSION, usage="""usage: %prog [options]
 
 See the manpage for more informations. Defaults are:
   - archives will be named hostname-YYYY-MM-DD.tar
@@ -418,7 +651,7 @@ See the manpage for more informations. Defaults are:
                   metavar="FILE", default=config_file)
     op.add_option("-f", "--file", dest="file",
                   help="name of the ARCHIVE to be generated",
-                  metavar="ARCHIVE", default=def_file)
+                  metavar="ARCHIVE", default=None)
     op.add_option("-d", "--dir", dest="destdir",
                   help="DIRECTORY where to store the archive",
                   metavar="DIRECTORY", default="/var/lib/bakonf/archives")
@@ -428,63 +661,20 @@ See the manpage for more informations. Defaults are:
     op.add_option("-b", "--bzip2", dest="compression",
                    help="enable compression with bzip2",
                    action="store_const", const=2)
+    op.add_option("", "--no-filesystem", dest="do_files",
+                  help="don't backup files",
+                  action="store_false", default=1)
+    op.add_option("", "--no-metas", dest="do_metas",
+                  help="don't backup meta-informations",
+                  action="store_false", default=1)
     op.add_option("-v", "--verbose", dest="verbose", action="store_true",
                   help="be verbose in operation", default=0)
     (options, args) = op.parse_args()
+    options.archive_id = archive_id
 
-    if options.verbose:
-        print "Scanning filesystem..."
-    bm = BackupManager(configfile=options.configfile)
+    if not options.do_files and not options.do_metas:
+        print >>sys.stderr, "Error: nothing to backup!"
+        sys.exit(1)
+
+    bm = BackupManager(options)
     bm.run()
-
-    # Archive files
-    if options.verbose:
-        print "Archiving files..."
-    final_tar = os.path.join(options.destdir, "%s.tar" % archive_id)
-    if options.compression == 1:
-        tarmode = "w:gz"
-        final_tar += ".gz"
-    elif options.compression == 2:
-        tarmode = "w:bz2"
-        final_tar += ".bz2"
-    else:
-        tarmode = "w"
-    tarh = tarfile.open(name=final_tar, mode=tarmode)
-    tarh.posix = 0
-    tarh.add(name="/", arcname="filesystem/", recursive=0)
-    for path in bm.memberlist:
-        try:
-            if path[0] == "/":
-                arcx = os.path.join("filesystem", path[1:])
-            else:
-                arcx = os.path.join("filesystem", path)
-            tarh.add(name=path, arcname=arcx, recursive=0)
-        except IOError, e:
-            print "Cannot read file %s, error: '%s'. Will not be archived." % (path, e.strerror)
-
-    # Now we have the files archived, start doing meta informations
-    # DOES NOT WORK, must use pipes... will be in 0.5 maybe
-    #meta_files=["/proc/version", "/proc/interrupts", "/proc/ioports", "/proc/iomem", "/proc/dma", "/proc/pci"]
-    #for item in meta_files:
-    #    tarh.add(name=item, arcname="meta"+item, recursive=0)
-        
-    if options.verbose:
-        print "Generating package list..."
-    fhandle = StringIO.StringIO()
-    bm.writepkglist(fhandle)
-    ti = genfakefile(fhandle, name = "meta/packages.lst")
-    tarh.addfile(ti, fhandle)
-
-    # Now we have the package list
-    fhandle = StringIO.StringIO()
-    fhandle.write("%s\n" % (os.uname(),))
-    ti = genfakefile(fhandle, name = "meta/uname.txt")
-    tarh.addfile(ti, fhandle)
-    tarh.close()
-    
-    # Bug in tarfile-0.6.3
-    if tarh._extfileobj:
-        tarh.fileobj.close()
-        
-    if options.verbose:
-        print "Archive generated at %s" % final_tar

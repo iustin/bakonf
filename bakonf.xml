@@ -1,0 +1,15 @@
+<bakonf>
+<!-- 
+     Bakonf main configuration file. Tune to your system.
+     See also the files in the sources subdirectory (included by default)
+-->
+<filesystem>
+    <!-- Standard directories -->
+    <scan path="/etc" />
+    <scan path="/usr/etc" />
+    <scan path="/usr/local/etc" />
+    <scan path="/var/lib/alternatives" />
+</filesystem>
+<!-- Include by default the other configuration files -->
+<include path="/etc/bakonf/sources/*.xml" />
+</bakonf>
