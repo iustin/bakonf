@@ -27,15 +27,15 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.8 $"
+__version__ = "$Revision: 1.9 $"
 PKG_VERSION = "0.5"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
 
 from __future__ import generators
 from optik import OptionParser
-import rpm, md5, sha, stat, os, sys, pwd, grp, types, glob, re
+import md5, sha, stat, os, sys, pwd, grp, types, glob, re
 import time, errno, StringIO, xml.dom.minidom, commands
-import tarfile
+import tarfile, bsddb
 
 def enumerate(collection):
     'Generates an indexed series:  (0,coll[0]), (1,coll[1]) ...'     
@@ -68,37 +68,28 @@ class FileState(object):
     compare.
 
     """
-    __slots__ = ('name', 'mode', 'user', 'group', 'size', 'mtime', 'lnkdest', 'virtual', 'force', 'uid', 'gid', '_md5', '_sha')
+    __slots__ = ('name', 'mode', 'user', 'group', 'size', 'mtime', 'lnkdest', 'virtual', 'force', '_md5', '_sha')
     
-    def __init__(self, name, mode=None, user=None, group=None,
-                 size=None, mtime=None, md5=None, sha=None,
-                 lnkdest=None):
+    def __init__(self, **kwargs):
         """Initialize the members of this instance.
         
-        If any of the values given is none, the state will be read
-        from disk. Otherwise, the state will be filled with the values
-        given.
+        Either the filename or the serialdata must be given, as
+        keyword arguments. If the filename is given, create a
+        FileState representing a physical file. If the serialdata is
+        given, create a virtual file with values unserialized from the
+        given data.
         
         """
-        self.name = name
-        if mode is not None and user is not None and group is not None and \
-               size is not None and mtime is not None and md5 is not None and \
-               sha is not None and lnkdest is not None:
-            # This means a fully specified virtual file
-            self.mode = mode
-            self.user = user
-            self.group = group
-            self.size = size
-            self.mtime = mtime
-            self._md5 = md5
-            self._sha = sha
-            self.lnkdest = lnkdest
-            self.virtual = 1
-            self.force = 0
-        else:
+        if len(kwargs) != 1:
+            raise ValueError("Invalid appelation of constructor - give either filename or serialdata")
+        if 'filename' not in kwargs and 'serialdata' not in kwargs:
+            raise ValueError("Invalid appelation of constructor - give either filename or serialdata")
+        if 'filename' in kwargs:
             # This means a physical file
+            self.name = kwargs['filename']
             self._readdisk()
-            
+        else:
+            self.unserialize(kwargs['serialdata'])
 
     def _readdisk(self):
         """Read the state from disk.
@@ -109,37 +100,38 @@ class FileState(object):
 
         """
         self.force = 0
+        self.virtual = 0
+        self._md5 = None
+        self._sha = None
         try:
-            self.virtual = 0
-            self._md5 = None
-            self._sha = None
             arr = os.lstat(self.name)
             self.mode = arr.st_mode
-            self.uid = arr.st_uid
-            self.gid = arr.st_gid
+            uid = arr.st_uid
+            gid = arr.st_gid
             self.size = arr.st_size
             self.mtime = arr.st_mtime
             if stat.S_ISLNK(self.mode):
                 self.lnkdest = os.readlink(self.name)
             else:
                 self.lnkdest = ""
-        except OSError:
+        except (OSError, IOError), e:
+            print >>sys.stderr, "Cannot read: %s" % e
             self.force = 1
-        except IOError:
-            self.force = 1
-        if not self.force:
+        else:
             try:
-                self.user = pwd.getpwuid(self.uid)[0]
+                self.user = pwd.getpwuid(uid)[0]
             except KeyError:
-                self.user = self.uid
+                self.user = uid
             try:
-                self.group = grp.getgrgid(self.gid)[0]
+                self.group = grp.getgrgid(gid)[0]
             except KeyError:
-                self.group = self.gid
+                self.group = gid
                 
     def _readhashes(self):
         """Compute the hashes of the file's contents."""
         
+        if self.virtual:
+            return
         if not self.force and stat.S_ISREG(self.mode):
             try:
                 md5hash = md5.new()
@@ -182,7 +174,7 @@ class FileState(object):
             # Both files are regular files
             # I hope here python optimizes in cases where the sizes differ,
             # and doesn't read the md5 in case it is not needed :)
-            return self.size == other.size and self.md5 == other.md5 #and self.sha == other.sha
+            return self.size == other.size and self.md5 == other.md5 and self.sha == other.sha
         else:
             return 0
         return 0
@@ -257,7 +249,7 @@ class FileState(object):
         mode = int(mode)
         size = long(size)
         mtime = int(mtime)
-        if len(md5sum) != 32 or len(shasum) != 40:
+        if len(md5sum) not in  (0, 32) or len(shasum) not in (0, 40):
             raise ValueError("Invalid hash length!")
         # Here we should have all the data needed
         self.virtual = 1
@@ -273,46 +265,59 @@ class FileState(object):
         self._sha = shasum
         
 class SubjectFile(object):
-    def __init__(self, fi):
+    __slots__ = ('force', 'name', 'virtual', 'physical')
+    
+    def __init__(self, name, virtualdata=None):
         """Constructor for the SubjectFile.
-        
-        Passed either a tuple of (name, size, mode, mtime, symlink
-        destination, user, group, md5) for normal cases or a tuple of
-        (name) if the file hasn't been found, in which case it will
-        always be backed up.
 
+        Creates a physical member based on the given filename. If
+        virtualdata is also given, create a virtual member based on
+        that data; otherwise, the file will always be selected for
+        backup.
+        
         """
-        if len(fi) == 1:
-            self.force = 1
-            self.name = fi[0]
-            self.virtualstate = None
-            self.physicalstate = FileState(self.name)
+        self.name = name
+        self.physical = FileState(filename=name)
+        if virtualdata is not None:
+            try:
+                self.virtual = FileState(serialdata=virtualdata)
+            except ValueError, e:
+                print >>sys.stderr, "Unable to serialize the file '%s': %s" % (name, e)
+                self.force = 1
+                self.virtual = None
+            else:
+                self.force = 0
         else:
-            (self.name, virtsize, virtmode, virtmtime, virtlnkdest, virtuser, virtgroup, virtmd5) = fi
-            self.virtualstate = FileState(self.name, md5 = virtmd5, user = virtuser, group = virtgroup, size = virtsize, lnkdest = virtlnkdest, mode = virtmode, mtime = virtmtime, sha = "")
-            self.physicalstate = FileState(self.name)
-            self.force = 0
+            self.force = 1
+            self.virtual = None
         
     def __str__(self):
         """Nice string version of self"""
-        return "<SubjectFile instance, virtual %s, physical %s>" % (self.virtualstate, self.physicalstate)
+        return "<SubjectFile instance, virtual %s, physical %s>" % (self.virtual, self.physical)
 
     def needsbackup(self):
         """Checks whether this file needs backup."""
-        return self.force or self.virtualstate != self.physicalstate
+        return self.force or self.virtual != self.physical
+
+    def serialize(self):
+        """Returns a serialized state of this file."""
+
+        return self.physical.serialize()
 
 class FileManager(object):
     """Class which deals with overall issues of selecting files
     for backup."""
-    def __init__(self, scanlist, excludelist):
+    def __init__(self, scanlist, excludelist, virtualsdb):
         """Constructor for class BackupManager."""
-        self.ts = rpm.TransactionSet()
         self.scanlist = scanlist
         self.excludelist = map(re.compile, excludelist)
+        virtualsdb = os.path.abspath(virtualsdb)
+        self.excludelist.append(re.compile("^%s$" % virtualsdb))
         self.errorlist = []
+        self.virtualsdb = bsddb.hashopen(virtualsdb, "c")
         
     def _findfile(self, name):
-        """Locate a file's entry in the package database.
+        """Locate a file's entry in the virtuals database.
 
         Locate the file's entry and returns a SubjectFile with these
         values. If the file is not found, it will return a SubjectFile
@@ -320,19 +325,12 @@ class FileManager(object):
 
         """
         
-        match = self.ts.dbMatch(rpm.RPMTAG_BASENAMES, name)
-        if match.count() == 0:
-            return SubjectFile((name,))
+        if self.virtualsdb.has_key("file:/%s" % name):
+            virtualdata = self.virtualsdb["file:/%s" % name]
         else:
-            hdr = match.next()
-            for index, hdr_filename in enumerate(hdr[rpm.RPMTAG_FILENAMES]):
-                if hdr_filename == name:
-                    sfile = SubjectFile((hdr_filename, hdr[rpm.RPMTAG_FILESIZES][index],
-                                         hdr[rpm.RPMTAG_FILEMODES][index], hdr[rpm.RPMTAG_FILEMTIMES][index],
-                                         hdr[rpm.RPMTAG_FILELINKTOS][index], hdr[rpm.RPMTAG_FILEUSERNAME][index],
-                                         hdr[rpm.RPMTAG_FILEGROUPNAME][index], hdr[rpm.RPMTAG_FILEMD5S][index]))
-                    return sfile
-        return SubjectFile((name,))
+            virtualdata = None
+            
+        return SubjectFile(name,virtualdata)
 
     def _helper(self, filelist, dirname, names):
         """Helper for the scandir method.
@@ -341,6 +339,7 @@ class FileManager(object):
         non-dir elements found in it.
         
         """
+        self.scanned.append(dirname)
         for basename in names:
             fullpath = os.path.join(dirname, basename)
             if self._isexcluded(fullpath):
@@ -352,9 +351,7 @@ class FileManager(object):
                 print >>sys.stderr, "Cannot stat file %s, reason: '%s'. Will not be archived." % (fullpath, e.strerror)
             else:
                 if not stat.S_ISDIR(statres.st_mode):
-                    a = self._findfile(fullpath)
-                    if a.needsbackup():
-                        filelist.append(fullpath)
+                    filelist += self._scanfile(fullpath)
                     
     def _scandir(self, path):
         """Gather the files needing backup under a directory.
@@ -369,10 +366,12 @@ class FileManager(object):
 
     def _scanfile(self, path):
         """Examine a file for inclusion in the backup."""
-        if self._isexcluded(path):
+        if self._isexcluded(path) or path in self.scanned:
             return []
+        self.scanned.append(path)
         sf = self._findfile(path)
         if sf.needsbackup():
+            self.files[sf.name] = sf
             return [sf.name]
         else:
             return []
@@ -387,8 +386,10 @@ class FileManager(object):
     def _checksources(self):
         """Examine the list of sources and process them."""
         biglist = []
+        self.files = {}
+        self.scanned = []
         for item in self.scanlist:
-            if self._isexcluded(item):
+            if self._isexcluded(item) or item in self.scanned:
                 continue
             st = os.lstat(item)
             if stat.S_ISDIR(st.st_mode):
@@ -417,26 +418,18 @@ class FileManager(object):
         pathlist = []
         for path in self.filelist:
             self._addparents(path, pathlist)
-        for path in self.filelist:
-            pathlist.append(path)
-        self.memberlist = pathlist
+        self.memberlist = pathlist + self.filelist
         
     def run(self):
         """Run the selection process."""
         self._checksources()
         self._makelist()
 
-    def writepkglist(self, fhandle):
-        """Write the rpm package list in the fhandle fileobject."""
-        lst = []
-        mi = self.ts.dbMatch()
-        hdr = mi.next()
-        while hdr is not None:
-            lst.append(hdr.sprintf("%{NAME}-%{VERSION}-%{RELEASE} %{ARCH} %{SIGMD5}"))
-            hdr = mi.next()
-        lst.sort()
-        for line in lst:
-            fhandle.write("%s\n" % line)
+    def notifywritten(self, path):
+        # If a file hasn't been found (as it is with directories), the
+        # worst case is that we ignore that we backed up that file.
+        if path in self.files:
+            self.virtualsdb["file:/%s" % path] = self.files[path].serialize()
 
 class MetaOutput(object):
     """Denoted a meta-information to be stored in an archive.
@@ -525,6 +518,12 @@ class BackupManager(object):
         if masterdom.firstChild.tagName != "bakonf":
             raise ConfigurationError(filename, "XML file root is not bakonf")
 
+        self.fs_virtualsdb = "/etc/bakonf/virtuals.db"
+        for config in masterdom.firstChild.getElementsByTagName("config"):
+            for elem in [x for x in config.childNodes if x.nodeType == xml.dom.Node.ELEMENT_NODE]:
+                if elem.tagName == "virtualsdb":
+                    self.fs_virtualsdb = elem.getAttribute("path")
+
         doms = BackupManager._getdoms(masterdom)
 
         for de in doms:
@@ -556,14 +555,15 @@ class BackupManager(object):
         if verbose:
             stime = time.time()
             print "Scanning files..."
-        fm = FileManager(self.fs_include, self.fs_exclude)
+        self.fs_manager = fm = FileManager(self.fs_include, self.fs_exclude, self.fs_virtualsdb)
         fm.run()
         errorlist = list(fm.errorlist)
         fs_list = fm.memberlist
         if verbose:
             ntime = time.time()
-            print "Done scanning, in %.2f seconds" % (ntime - stime)
+            print "Done scanning, in %.4f seconds" % (ntime - stime)
             print "Archiving files..."
+        self.fs_donelist = donelist = []
         archive.add(name="/", arcname="filesystem/", recursive=0)
         for path in fs_list:
             if path.startswith("/"):
@@ -575,9 +575,12 @@ class BackupManager(object):
             except IOError, e:
                 errorlist.append((path, e.strerror))
                 print >>sys.stderr, "Cannot read file %s, error: '%s'. Will not be archived." % (path, e.strerror)
+            else: # Successful archiving of the member
+                donelist.append(path)
         if verbose:
             ptime = time.time()
-            print "Done archiving files, in %.2f seconds." % (ptime - ntime)
+            print "Done archiving files, in %.4f seconds." % (ptime - ntime)
+
         sio = StringIO.StringIO()
         for (filename, error) in errorlist:
             sio.write("'%s'\t'%s'\n" % (filename, error))
@@ -598,6 +601,7 @@ class BackupManager(object):
         for meta in self.meta_outputs:
             if not meta.store(archive):
                 errorlist.append(meta.errors)
+
         sio = StringIO.StringIO()
         for (cmd, error) in errorlist:
             sio.write("'%s'\t'%s'\n" % (cmd, error))
@@ -653,6 +657,11 @@ class BackupManager(object):
         if options.verbose:
             statres = os.stat(final_tar)
             print "Archive generated at '%s', size %i." % (final_tar, statres.st_size)
+
+        # Now update the database with the files which have been stored
+        if options.do_files:
+            for path in self.fs_donelist:
+                self.fs_manager.notifywritten(path)
         
 
 def genfakefile(sio=None, name = None, user='root', group='root', mtime=None):
