@@ -1,0 +1,3 @@
+# Configuration file for quota entries
+excludeitem ^.*/aquota.user$
+excludeitem ^.*/aquota.group$

@@ -1,0 +1,3 @@
+# Configuration files for Postgresql
+sysitem /var/lib/pgsql/data/*.conf
+sysitem /var/lib/pgsql/data/server.*

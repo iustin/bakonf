@@ -1,0 +1,3 @@
+# Miscelaneous stuff
+excludeitem ^/etc/gconf
+excludeitem ^/etc/cups/ppds.dat$
