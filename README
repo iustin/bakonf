@@ -9,12 +9,13 @@ servers, while still backing up enough to recreate the system.
 The contents of the archives created contain enough information
 so that a skilled sysadmin can restore the system to a working
 state. Beside the actual information from the filesystem, the
-extra that bakonf stores is:
-    - package list, so you known exactly what you had installed
-    - uname information
-    - partition table (not yet done, must choose how to configure
-      what disk to scan)
+extra that bakonf stores is (for Linux):
+    - partition table
+    - various /proc information
+    - pci & usb device list
 
-For more informations, see doc/usermanual.html
+For other os-es, you must customize the configuration files.
+
+For more informations, see doc/usermanual.txt
 
 Iustin Pop, <iusty@k1024.org>
