@@ -1,8 +1,6 @@
-<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V4.2//EN" [
-<!ENTITY apndx SYSTEM "fdl-appendix.sgml">
-]>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V4.2//EN">
 
-<article class="specification">
+<article class="whitepaper">
   <articleinfo>
     <author>
       <firstname>Iustin</firstname>
@@ -16,7 +14,7 @@
       <holder>Iustin Pop, &lt;iusty@k1024.org&gt;</holder>
     </copyright>
     <legalnotice>
-      <para>Permission is granted to copy, distribute and/or modify this document under the terms of the GNU Free Documentation License, Version 1.1 or any later version published by the Free Software Foundation; with no Invariant Sections, with no Front-Cover Texts, and with no Back-Cover Texts. A copy of the license is included in the section entitled "GNU Free Documentation License". </para>
+      <para>Permission is granted to copy, distribute and/or modify this document under the terms of the GNU Free Documentation License, Version 1.1 or any later version published by the Free Software Foundation; with no Invariant Sections, with no Front-Cover Texts, and with no Back-Cover Texts. A copy of the license is included in the section entitled "GNU Free Documentation License".</para>
       <para>New versions of this document can be downloaded at the projects's homepage, <ulink url="http://www.nongnu.org/bakonf/">http://www.nongnu.org/bakonf/</ulink></para>
     </legalnotice>
   </articleinfo>
@@ -53,6 +51,32 @@
         </varlistentry>
       </variablelist>
     <para>From all these, only the configuration data and the user data are absolutely required to recreate the system. The binaries can come from the installation source. The system managed data will be recreated by the system. And since the difference in size between the configuration and user data is so great in a typical system, I believe it deserves another backup method (besides the inclusion in standard backup procedures, which are, I repeat, <emphasis>CRITICAL!</emphasis>).</para>
+  </section>
+  <section>
+    <title>Quick start</title>
+    <orderedlist>
+      <listitem>
+        <para>run bakonf with <option>-L0</option> to archive all config files and create its database:</para>
+        <screen># bakonf -L0
+#</screen>
+        <para>If everything went well, bakonf has created an archive under <filename class="directory">/var/lib/bakonf/archives</filename> named after your host. Look into that directory to find it. If any errors have occured, bakonf will tell you:</para>
+        <screen>
+[user@test user]$ bakonf -L0
+Error: cannot read '/nfs/README': 'Permission denied'. Not archived.
+Warning: '/sbin/lsusb -vv' exited with status 1.
+Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
+[user@test user]$
+</screen>
+      </listitem>
+      <listitem>
+        <para>run daily (or more often) bakonf with <option>-L1</option> to archive only the changed files since the previous step. This archive should be much smaller. It will be easy, <emphasis>after encryption</emphasis>, to email it.</para>
+        <screen># bakonf -L1
+#</screen>
+      </listitem>
+      <listitem>
+        <para>every week, go back to the first step.</para>
+      </listitem>
+    </orderedlist>
   </section>
   <section>
     <title>Details about bakonf</title>
@@ -217,7 +241,7 @@
     </section>
     <section>
       <title>What can I use bakonf for?</title>
-      <para>At least for:
+      <para>At least for:</para>
            <itemizedlist>
           <listitem><para>Configuration rollback. Since the archives are small, you can keep many versions, but unlike in differential backup, here one archive contains all the needed data.</para></listitem>
           <listitem><para>Configuration cloning. You can take a bakonf-generated archive from one system to another and 'clone' as much of the settings as you want.</para></listitem>
@@ -256,8 +280,8 @@
     <section>
       <title>Configuration language</title>
       <para>The configuration file is written in XML, and must have the document tag <emphasis>bakonf</emphasis>.</para>
-      <para>The file can contain the following tags:
-<variablelist>
+      <para>The file can contain the following tags:</para>
+      <variablelist>
           <varlistentry>
             <term>&lt;include path="<replaceable>CONFIGFILE_PATTERN</replaceable>"/&gt;</term>
             <listitem>
@@ -300,13 +324,13 @@
             </listitem>
           </varlistentry>
         </variablelist>
-          The order of precedence for scan/noscan is:
-<itemizedlist>
+      <para>The order of precedence for scan/noscan is:</para>
+      <itemizedlist>
           <listitem><para>bakonf will start scanning all items defined with scan</para></listitem>
           <listitem><para>if at any point in the filesystem scan, the current file/directory mathes any one of noscan REGEXPs, the scan will ignore it. For directories, that means ignoring all the files they contain, so please be careful about it.</para></listitem>
-        </itemizedlist>
-      <para>Using these, you can select where you want bakonf to look for files for archiving. The default config file includes <filename>/etc</filename>, <filename>/usr/etc</filename>, <filename>/usr/local/etc</filename> and some others (look in <filename>/etc/bakonf</filename> after installing).
-      <para>Example main configuration file (the file included in the distribution):
+      </itemizedlist>
+      <para>Using these, you can select where you want bakonf to look for files for archiving. The default config file includes <filename>/etc</filename>, <filename>/usr/etc</filename>, <filename>/usr/local/etc</filename> and some others (look in <filename>/etc/bakonf</filename> after installing).</para>
+      <para>Example main configuration file (the file included in the distribution):</para>
       <screen>
 &lt;bakonf&gt;
 &lt;!-- 
@@ -324,7 +348,7 @@
 &lt;include path="/etc/bakonf/sources/*.xml" /&gt;
 &lt;/bakonf&gt;
 </screen>
-Example GNU/Linux proc configuration file (included in the distribution):
+<para>Example GNU/Linux proc configuration file (included in the distribution):</para>
 <screen>
 &lt;bakonf&gt;
 &lt;!--
@@ -346,7 +370,6 @@ Example GNU/Linux proc configuration file (included in the distribution):
 &lt;/metadata&gt;
 &lt;/bakonf&gt;
 </screen>
-</para>
     </section>
     <section>
       <title>File list</title>
@@ -392,10 +415,15 @@ Example GNU/Linux proc configuration file (included in the distribution):
     <title>Using bakonf</title>
     <section>
       <title>Backup phase</title>
+      <para>For details about the actual parameters to bakonf, see its manpage.</para>
       <para>To use bakonf, choose to either:
         <itemizedlist>
-          <listitem><para>run it manually, when you want</para></listitem>
-          <listitem><para>use the provided cron script to run it autmatically, or create your own</para></listitem>
+          <listitem><para>run it manually, when you want, either always with <option>-L0</option> or with a combination: <simplelist type="inline">
+                <member>weekly with <option>-L0</option></member>
+                <member>daily with <option>-L1</option></member>
+              </simplelist>
+           </para></listitem>
+          <listitem><para>use the provided cron script to run it automatically, or create your own</para></listitem>
         </itemizedlist>
 </para>
       <para>In any case, you have to do something with the generated archives. Write the to floppy, tape, CD, other machine, but don't just ignore them, you defeat the purpose of bakonf.</para>
@@ -427,5 +455,4 @@ Example GNU/Linux proc configuration file (included in the distribution):
       </section>
     </section>
   </section>
-&apndx;
 </article>
