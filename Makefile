@@ -5,7 +5,6 @@ install:
 	install -d -m 0700 $(DESTDIR)/etc/bakonf
 	install -d -m 0700 $(DESTDIR)/etc/bakonf/sources
 	install -d -m 0700 $(DESTDIR)/var/lib/bakonf
-	install -d -m 0700 $(DESTDIR)/var/lib/bakonf/work
 	install -d -m 0700 $(DESTDIR)/var/lib/bakonf/archives
 	install -D -m 0700 bakonf.py $(DESTDIR)/usr/sbin/bakonf.py
 	install -D -m 0600 bakonf.conf $(DESTDIR)/etc/bakonf/bakonf.conf
