@@ -32,4 +32,4 @@ rpm:
 
 changelog:
 	rm ChangeLog || true
-	rcs2log -u 'iusty	Iustin Pop	iusty@yahoo.com' > ChangeLog
+	rcs2log -u 'iusty	Iustin Pop	iusty@k1024.org' > ChangeLog

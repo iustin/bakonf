@@ -42,8 +42,11 @@ rm -rf $RPM_BUILD_ROOT
 /etc/cron.d/bakonf
 
 %changelog
-* Thu Dec 12 2002 Iustin Pop <iusty@yahoo.com> 0.3-1
+* Tue Dec 17 2002 Iustin Pop <iusty@k1024.org> 0.4.1-1
+- Version 0.4.1 - bugfixing, added usermanual to the rpm
+
+* Thu Dec 12 2002 Iustin Pop <iusty@k1024.org> 0.3-1
 - Version 0.3
 
-* Wed Dec 11 2002 Iustin Pop <iusty@yahoo.com> 
+* Wed Dec 11 2002 Iustin Pop <iusty@k1024.org> 
 - Initial build.
