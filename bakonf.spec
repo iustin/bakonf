@@ -39,6 +39,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/sbin/bakonf.py
 /var/lib/bakonf
 %doc /usr/share/doc/%{name}-%{version}
+/etc/cron.d/bakonf
 
 %changelog
 * Thu Dec 12 2002 Iustin Pop <iusty@yahoo.com> 0.3-1

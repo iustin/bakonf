@@ -10,11 +10,12 @@ install:
 	install -D -m 0600 bakonf.conf $(DESTDIR)/etc/bakonf/bakonf.conf
 	install -m 0600 sources/*.sources $(DESTDIR)/etc/bakonf/sources
 	install -D -m 0644 README $(DESTDIR)/usr/share/doc/$(NAME)-$(VERSION)/README
+	install -D -m 0600 bakonf.cron $(DESTDIR)/etc/cron.d/bakonf
 
 dist:
 	dir
 	mkdir $(DISTDIR)
-	cp bakonf.py bakonf.conf $(DISTDIR)
+	cp bakonf.py bakonf.conf bakonf.cron $(DISTDIR)
 	cp Makefile bakonf.spec $(DISTDIR)
 	cp -a doc $(DISTDIR)
 	cp -a sources $(DISTDIR)
