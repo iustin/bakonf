@@ -1,7 +1,7 @@
 <bakonf>
 <!-- Miscelaneous stuff -->
 <filesystem>
-<noscan regex="^/etc/gconf"/>
-<noscan regex="^/etc/cups/ppds.dat$"/>
+    <noscan regex="^/etc/gconf"/>
+    <noscan regex="^/etc/cups/ppds.dat$"/>
 </filesystem>
 </bakonf>
