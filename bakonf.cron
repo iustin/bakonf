@@ -1,0 +1,3 @@
+# Example cron file for bakonf
+MAILTO=root
+#0 3 * * * root /usr/sbin/bakonf --bzip2
