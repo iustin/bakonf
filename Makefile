@@ -15,6 +15,7 @@ dist:
 	cp Makefile bakonf.spec $(DISTDIR)
 	cp -a doc $(DISTDIR)
 	cp README COPYING $(DISTDIR)
+	test -f ChangeLog && cp ChangeLog $(DISTDIR)
 	tar cvzf $(NAME)-$(VERSION).tar.gz $(DISTDIR)
 	rm -rf $(DISTDIR)
 
