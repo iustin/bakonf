@@ -15,4 +15,4 @@ extra that bakonf stores is:
     - partition table (not yet done, must choose how to configure
       what disk to scan)
 
-For more informations, see doc/usermanual.sgml
+For more informations, see doc/usermanual.html

@@ -27,7 +27,7 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.5 $"
+__version__ = "$Revision: 1.6 $"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
 
 from __future__ import generators
@@ -265,15 +265,25 @@ class BackupManager(object):
         return SubjectFile((name,))
 
     def _helper(self, filelist, dirname, names):
-        """Helper for the scandir method."""
+        """Helper for the scandir method.
+
+        This function scans a directory's entries and processes the
+        non-dir elements found in it.
+        
+        """
         for basename in names:
             fullpath = os.path.join(dirname, basename)
             if self._isexcluded(fullpath):
                 continue
-            if not stat.S_ISDIR(os.stat(fullpath).st_mode):
-                a = self._findfile(fullpath)
-                if a.needsbackup():
-                    filelist.append(fullpath)
+            try:
+                statres = os.lstat(fullpath)
+            except OSError, e:
+                print "Cannot stat file %s, reason: '%s'. Will not be archived." % (fullpath, e.strerror)
+            else:
+                if not stat.S_ISDIR(statres.st_mode):
+                    a = self._findfile(fullpath)
+                    if a.needsbackup():
+                        filelist.append(fullpath)
                     
     def _scandir(self, path):
         """Gather the files needing backup under a directory.
@@ -397,7 +407,7 @@ if __name__ == "__main__":
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
     def_file = "%s.tar" % archive_id
     config_file = "/etc/bakonf/bakonf.conf"
-    op = OptionParser(version="%prog 0.4\nWritten by Iustin Pop\n\nCopyright (C) 2002 Iustin Pop\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.", usage="""usage: %prog [options]
+    op = OptionParser(version="%prog 0.4.1\nWritten by Iustin Pop\n\nCopyright (C) 2002 Iustin Pop\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.", usage="""usage: %prog [options]
 
 See the manpage for more informations. Defaults are:
   - archives will be named hostname-YYYY-MM-DD.tar
@@ -450,7 +460,7 @@ See the manpage for more informations. Defaults are:
                 arcx = os.path.join("filesystem", path)
             tarh.add(name=path, arcname=arcx, recursive=0)
         except IOError, e:
-            print "Cannot read file %s, error: %s" % (path, e)
+            print "Cannot read file %s, error: '%s'. Will not be archived." % (path, e.strerror)
 
     # Now we have the files archived, start doing meta informations
     # DOES NOT WORK, must use pipes... will be in 0.5 maybe

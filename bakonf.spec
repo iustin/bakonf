@@ -1,6 +1,6 @@
 Summary: A configuration file backup tool
 Name: bakonf
-Version: 0.4
+Version: 0.4.1
 Release: 1
 License: GPL
 Vendor: Iustin Pop
