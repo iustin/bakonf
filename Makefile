@@ -21,3 +21,7 @@ dist:
 
 rpm:
 	rpm -ta $(NAME)-$(VERSION).tar.gz
+
+changelog:
+	rm ChangeLog || true
+	rcs2log -u 'iusty	Iustin Pop	iusty@yahoo.com' > ChangeLog
