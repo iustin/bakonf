@@ -1,0 +1,19 @@
+<bakonf>
+<!--
+     File which contains hardware related informations, mostly
+     extracted from the /proc filesystem
+-->
+<meta>
+<!-- Proc values -->
+<storeoutput command="cat /proc/version" destination="proc/version"/>
+<storeoutput command="cat /proc/dma" destination="proc/dma"/>
+<storeoutput command="cat /proc/interrupts" destination="proc/interrupts"/>
+<storeoutput command="cat /proc/ioports" destination="proc/ioports"/>
+<storeoutput command="cat /proc/iomem" destination="proc/iomem"/>
+<storeoutput command="cat /proc/cpuinfo" destination="proc/cpuinfo"/>
+<storeoutput command="cat /proc/partitions" destination="proc/partitions"/>
+<!-- Also hardware information -->
+<storeoutput command="/sbin/lspci -vv" destination="lspci.txt"/>
+<storeoutput command="/sbin/lsusb -vv" destination="lsusb.txt"/>
+</meta>
+</bakonf>

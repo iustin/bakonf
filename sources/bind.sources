@@ -1,4 +1,0 @@
-# Configuration file for bind
-sysitem /var/named
-excludeitem ^/var/named/named_dump.db$
-excludeitem ^/var/named/slave/.+$

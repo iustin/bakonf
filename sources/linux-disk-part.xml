@@ -1,0 +1,13 @@
+<bakonf>
+<!--
+     File which contains disk partitioning informations.
+-->
+<meta>
+<!-- Enable if you have IDE hdd(s) -->
+<storeoutput command="/sbin/sfdisk -d /dev/hda" destination="disks/hda.sfdisk"/>
+<!-- Enable if you have SCSI hdd(s) -->
+<!-- <storeoutput command="/sbin/sfdisk -d /dev/sda" destination="disks/sda.sfdisk"/> -->
+<!-- Use the above templates to dump partitioning information
+     for other types of disks (raid, lvm, etc) -->
+</meta>
+</bakonf>

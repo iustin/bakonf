@@ -3,11 +3,11 @@
     <titlepag>
       <title>bakonf - a configuration file backup tool</title>
       <author><name>Iustin Pop &lt;iusty@k1024.org&gt;</name></author>
-      <date>$Id: usermanual.sgml,v 1.3 2002/12/17 02:11:03 iusty Exp $</date>
+      <date>$Id: usermanual.sgml,v 1.4 2002/12/18 23:20:12 iusty Exp $</date>
       <abstract>This document explains the concept and usage of bakonf, a system backup tool which backs up only the configuration files on a system.</abstract>
     </titlepag>
     <sect><heading>Introduction</heading>
-      <p>Making backup is an important aspect of system administration. The techniques of backing up data are explained in any good document about administering a computer, and they won't be explained here again.</p>
+      <p>Making backup is an important aspect of system administration. The techniques of backing up data are explained in any good document about system administration, and they won't be explained here again.</p>
       <p>However, bakonf comes into play into a particular part of the backups: the backing up of the system's configuration.</p>
       <p>The basic idea is that, after a fresh install of a package-based GNU/Linux system, for example RedHat 8.0 full install, you have &tilde;4.5GB of space used. However, only a <em>very</em> small part of this amount is holding important information, the other part being binaries, libraries and other kind of data which will never modify in normal usage. Only the configuration files are changing (of course, also the user data is changing, but we are talking about an empty system).</p>
       <p>If we classify the files existing on a Unix system, we have:
@@ -39,40 +39,78 @@
     </sect>
     <sect>
       <heading>Configuration</heading>
-      <p>bakonf uses a main configuration file <tt>/etc/bakonf/bakonf.conf</tt>, which does some standard settings and tells bakonf what other files to include. These additional files are usually locate in <tt>/etc/bakonf/sources</tt> and tell bakonf how to handle some special cases.</p>
+      <p><bf>Note:</bf> older bakonf versions (&lt; 0.5) had an entirely different config file. If you upgraded, be sure to forward you changes to the new config files.</p>
+      <p>bakonf uses a main configuration file <tt>/etc/bakonf/bakonf.xml</tt>, which does some standard settings and tells bakonf what other files to include. These additional files are usually locate in <tt>/etc/bakonf/sources</tt> and tell bakonf how to handle some special cases.</p>
       <sect1>
         <heading>Configuration language</heading>
-        <p>It's not really a language, it is simply:
+        <p>The configuration file is written in XML, and must have the document tag <em>bakonf</em>.</p>
+        <p>The file can contain the following tags:
           <descrip>
-            <tag>&num; COMMENT</tag>comments begin with &num; and extend to the end of the line.
-            <tag>include <tt/BAKONF_CONFIGFILE_PATTERN/</tag>tell bakonf to also parse any files which match the given shell pattern. These are files which modify bakonf's own behavior, and are usually located in /etc/bakonf/sources. These are not directories to be backed up! (Altough, if modified, they will be, since are located under /usr).
-            <tag>sysitem <tt/PATTERN/</tag>tell bakonf to add any file or directory which matched shell pattern <tt/PATTERN/ to its include list. These can be files or directories. Bakonf will descend directories, but will <em>follow</em> symbolic links! The symlinks are considered configuration items also, so they will be backeup up themselves.
-            <tag>excludeitem <tt/REGEXP/</tag>tell bakonf to ignore any file or directory which matches the regular expression REGEXP from analysing.
+            <tag>&lt;include path="<tt/BAKONF_CONFIGFILE_PATTERN/"/&gt;</tag>tell bakonf to also parse any files which match the given shell pattern. These are files which modify bakonf's own behavior, and are usually located in /etc/bakonf/sources. These are not directories to be backed up! (Altough, if modified, they will be, since are located under /etc usually).
+            <tag>&lt;filesystem&gt;</tag>Starts declarations about files to be backed up, and can contain:
+              <descrip>
+                <tag>&lt;scan path="<tt/PATTERN/"/&gt;</tag>tell bakonf to add any file or directory which matched shell pattern <tt/PATTERN/ to its include list. These can be files or directories. Bakonf will descend directories, but will not <em>follow</em> symbolic links! The symlinks are considered configuration items also, so they will be backeup up themselves.
+                <tag>&lt;noscan regex="<tt/REGEXP/"/&gt;</tag>tell bakonf to ignore any file or directory which matches the regular expression REGEXP from analysing.
+              </descrip>
+            <tag>&lt;meta&gt;</tag>Starts declarations about metainformations to be included in the archive, and can contain:
+              <descrip>
+                <tag>&lt;storeoutput command="<tt/SHELL COMMAND/" destination="<tt/PATH IN ARCHIVE/"/&gt;</tag>Tells bakonf to execute the given <tt/SHELL COMMAND/ and include its output in a file named <tt>meta/PATH IN ARCHIVE</tt> in the created archive. For example, the element: <tt>&lt;storeoutput command="cat /proc/version" destination="proc/version"/&gt;</tt> will create a file in the archive with the name <tt>meta/proc/version</tt> which will contain the <tt>/proc/version</tt> file.
+              </descrip>
           </descrip>
-          The order of precedence for sysitem/excludeitem is:
+          The order of precedence for scan/noscan is:
 <itemize>
-            <item>bakonf will start scanning all items defined with sysitem</item>
-            <item>if at any point in the filesystem scan, the current file/directory mathes any one of excludeitem REGEXPs, the scan will ignore it. For directories, that means ignoring all the files they contain, so please be careful about it.</item>
+            <item>bakonf will start scanning all items defined with scan</item>
+            <item>if at any point in the filesystem scan, the current file/directory mathes any one of noscan REGEXPs, the scan will ignore it. For directories, that means ignoring all the files they contain, so please be careful about it.</item>
           </itemize>
-          I have used a customized version of Python's shlex class. For more details, run pydoc on the bakonf.py source.</p>
         <p>Using these, you can select where you want bakonf to look for files for archiving. The default config file includes <tt>/etc</tt>, <tt>/usr/etc</tt>, <tt>/usr/local/etc</tt> and some others (look in <tt>/etc/bakonf</tt> after installing).
-        <p>Example configuration file (the file included in the distribution):
+        <p>Example main configuration file (the file included in the distribution):
       <code>
-# Standard directories
-sysitem /etc
-sysitem /usr/etc
-sysitem /usr/local/etc
-sysitem /var/lib/alternatives
-# Include the custom cases
-include /etc/bakonf/sources/*.sources
+&lt;bakonf&gt;
+&lt;!-- 
+     Bakonf main configuration file. Tune to your system.
+     See also the files in the sources subdirectory (included by default)
+--&gt;
+&lt;filesystem&gt;
+    &lt;!-- Standard directories --&gt;
+    &lt;scan path="/etc" /&gt;
+    &lt;scan path="/usr/etc" /&gt;
+    &lt;scan path="/usr/local/etc" /&gt;
+    &lt;scan path="/var/lib/alternatives" /&gt;
+&lt;/filesystem&gt;
+&lt;!-- Include by default the other configuration files --&gt;
+&lt;include path="/etc/bakonf/sources/*.xml" /&gt;
+&lt;/bakonf&gt;
 </code>
+Example proc configuration file (included in the distribution):
+<code>
+&lt;bakonf&gt;
+&lt;!--
+     File which contains hardware related informations, mostly
+     extracted from the /proc filesystem
+--&gt;
+&lt;meta&gt;
+&lt;!-- Proc values --&gt;
+&lt;storeoutput command="cat /proc/version" destination="proc/version"/&gt;
+&lt;storeoutput command="cat /proc/dma" destination="proc/dma"/&gt;
+&lt;storeoutput command="cat /proc/interrupts" destination="proc/interrupts"/&gt;
+&lt;storeoutput command="cat /proc/ioports" destination="proc/ioports"/&gt;
+&lt;storeoutput command="cat /proc/iomem" destination="proc/iomem"/&gt;
+&lt;storeoutput command="cat /proc/cpuinfo" destination="proc/cpuinfo"/&gt;
+&lt;storeoutput command="cat /proc/partitions" destination="proc/partitions"/&gt;
+&lt;!-- Also hardware information --&gt;
+&lt;storeoutput command="/sbin/lspci -vv" destination="lspci.txt"/&gt;
+&lt;storeoutput command="/sbin/lsusb -vv" destination="lsusb.txt"/&gt;
+&lt;/meta&gt;
+&lt;/bakonf&gt;
+</code>
+</p>
       </sect1>
       <sect1>
         <heading>File list</heading>
         <p>bakonf is composed of:
         <descrip>
-            <tag><tt>/etc/bakonf/bakonf.conf</tt></tag>Main configuration file.
-            <tag><tt>/etc/bakonf/sources/*.sources</tt></tag>Configuration files for special cases (config files outside of etc dirs).
+            <tag><tt>/etc/bakonf/bakonf.xml</tt></tag>Main configuration file.
+            <tag><tt>/etc/bakonf/sources/*.xml</tt></tag>Configuration files for special cases (config files outside of etc dirs).
             <tag><tt>/usr/sbin/bakonf.py</tt></tag>Main program
             <tag><tt>/etc/cron.d/bakonf</tt></tag>Cron file, by default it does not run bakonf, you must uncomment a line to run it.
             <tag><tt>/var/lib/bakonf/archives</tt></tag>Default directory for configuration file archives.

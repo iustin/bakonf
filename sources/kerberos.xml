@@ -1,0 +1,6 @@
+<bakonf>
+<!-- # Configuratio file for kerberos -->
+<filesystem>
+<scan path="/var/kerberos"/>
+</filesystem>
+</bakonf>

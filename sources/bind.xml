@@ -1,0 +1,8 @@
+<bakonf>
+<!-- # Configuration file for bind -->
+<filesystem>
+    <scan path="/var/named"/>
+    <noscan regex="^/var/named/named_dump.db$"/>
+    <noscan regex="^/var/named/slave/.+$"/>
+</filesystem>
+</bakonf>
