@@ -1,0 +1,8 @@
+<bakonf>
+<!-- 
+    Alternatives settings
+-->
+<filesystem>
+    <scan path="/var/lib/alternatives" />
+</filesystem>
+</bakonf>
