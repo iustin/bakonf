@@ -27,7 +27,7 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.3 $"
+__version__ = "$Revision: 1.4 $"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
 
 from __future__ import generators
@@ -412,8 +412,8 @@ if __name__ == "__main__":
     my_hostname = os.uname()[1]
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
     def_file = "%s.tar" % archive_id
-    config_file = "bakonf.cfg"
-    op = OptionParser(version="0.2", usage="""usage: %prog [options]
+    config_file = "/etc/bakonf/bakonf.conf"
+    op = OptionParser(version="%prog 0.3\nWritten by Iustin Pop\n\nCopyright (C) 2002 Iustin Pop\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.", usage="""usage: %prog [options]
 
 See the manpage for more informations. Defaults are:
   - workdir is /var/lib/bakonf/work
@@ -428,10 +428,10 @@ See the manpage for more informations. Defaults are:
                   metavar="ARCHIVE", default=def_file)
     op.add_option("-d", "--dir", dest="destdir",
                   help="DIRECTORY where to store the archive",
-                  metavar="DIRECTORY", default="/var/lib/bakonf")
+                  metavar="DIRECTORY", default="/var/lib/bakonf/archives")
     op.add_option("-w", "--work-dir", dest="workdir",
                   help="DIRECTORY to use for temporary files (NOT world readable/writable!)",
-                  metavar="DIRECTORY", default="work/")
+                  metavar="DIRECTORY", default="/var/lib/bakonf/work/")
 ##    op.add_option("-n", "--null", dest="separator", action="store_const",
 ##                  const="\0", help="separate the filenames with " \
 ##                  "NULL (tar only)")
@@ -471,18 +471,22 @@ See the manpage for more informations. Defaults are:
         print taroutput
     else:
         if options.verbose:
-            print "Generated filesystem.tar, tar output was '%s':" % taroutput
+            print "Generated filesystem.tar, tar output was: '%s'" % taroutput
     if not os.path.isfile(filesystem_tar):
         print "tar didn't create an archive, bailing out."
     del p4
+    # Filesystem tar created, get rid of filelist.lst
+    os.unlink(filenames_lst)
 
     # Now we have the filesystem archive
+    packages_lst = os.path.join(final_dir, "packages.lst")
     if options.verbose:
         print "Generating package list"
-    bm.writepkglist(os.path.join(final_dir, "packages.lst"))
+    bm.writepkglist(packages_lst)
 
     # Now we have the package list
-    f = file(os.path.join(final_dir, "uname"), "w")
+    uname_lst = os.path.join(final_dir, "uname")
+    f = file(uname_lst, "w")
     f.write("%s\n" % (os.uname(),))
     f.close()
 
@@ -502,7 +506,15 @@ See the manpage for more informations. Defaults are:
         print taroutput
     else:
         if options.verbose:
-            print "Generated filesystem.tar, tar output was '%s':" % taroutput
+            print "Generated filesystem.tar, tar output was: '%s'" % taroutput
     if not os.path.isfile(filesystem_tar):
         print "tar didn't create an archive, bailing out."
     del p4
+
+    # Delete intermediary files
+    os.unlink(filesystem_tar)
+    os.unlink(packages_lst)
+    os.unlink(uname_lst)
+    os.rmdir(final_dir)
+    if options.verbose:
+        print "Archive generated at %s" % final_tar
