@@ -8,6 +8,14 @@
     </author>
     <title>bakonf usermanual</title>
     <abstract><para>This document explains the concept and usage of bakonf, a system tool which backs up the configuration files on a system.</para></abstract>
+    <copyright>
+      <year>2002</year>
+      <holder>Iustin Pop, &lt;iusty@k1024.org&gt;</holder>
+    </copyright>
+    <legalnotice>
+      <para>Permission is granted to copy, distribute and/or modify this document under the terms of the GNU Free Documentation License, Version 1.1 or any later version published by the Free Software Foundation; with no Invariant Sections, with no Front-Cover Texts, and with no Back-Cover Texts. A copy of the license is included in the section entitled "GNU Free Documentation License". </para>
+      <para>New versions of this document can be downloaded at the projects's homepage, <ulink url="http://www.nongnu.org/bakonf/">http://www.nongnu.org/bakonf/</ulink></para>
+    </legalnotice>
   </articleinfo>
   <section>
     <title>Introduction</title>
@@ -45,6 +53,7 @@
   </section>
   <section>
     <title>Details about bakonf</title>
+    <para>bakonf home page is <ulink url="http://www.nongnu.org/bakonf/">http://www.nongnu.org/bakonf/</ulink>. The project is hosted at <ulink url="http://savannah.nongnu.org/projects/bakonf/">http://savannah.nongnu.org/projects/bakonf/</ulink>.</para>
     <para>You can regard bakonf as a rescue archive creator. It creates an archive of configuration files and metadata information about the system. By metadata, I mean data which is not found anywhere in the filesystem as simple files: partition table layout, hardware configuration, kernel version, etc.</para>
     <table frame="all" colsep="0" rowsep="1">
       <title>Archive layout</title>
