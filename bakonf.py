@@ -27,8 +27,9 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.9 $"
+__version__ = "$Revision: 1.10 $"
 PKG_VERSION = "0.5"
+DB_VERSION  = "1"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
 
 from __future__ import generators
@@ -49,7 +50,7 @@ def enumerate(collection):
 class ConfigurationError(Exception):
     """Exception for invalid configuration files."""
     def __init__(self, filename, error):
-        Exception.__init__()
+        Exception.__init__(self)
         self.filename = filename
         self.error = error
         
@@ -307,14 +308,29 @@ class SubjectFile(object):
 class FileManager(object):
     """Class which deals with overall issues of selecting files
     for backup."""
-    def __init__(self, scanlist, excludelist, virtualsdb):
-        """Constructor for class BackupManager."""
+    def __init__(self, scanlist, excludelist, virtualsdb, backuplevel):
+        """Constructor for class FileManager."""
         self.scanlist = scanlist
         self.excludelist = map(re.compile, excludelist)
         virtualsdb = os.path.abspath(virtualsdb)
         self.excludelist.append(re.compile("^%s$" % virtualsdb))
         self.errorlist = []
-        self.virtualsdb = bsddb.hashopen(virtualsdb, "c")
+        if backuplevel == 0:
+            mode = "n"
+        elif backuplevel == 1:
+            mode = "r"
+        else:
+            raise ValueError("Unknown backup level %u" % backuplevel)
+        self.backuplevel = backuplevel
+        self.virtualsdb = bsddb.hashopen(virtualsdb, mode)
+        if backuplevel == 0:
+            self.virtualsdb["bakonf:db_version"] = DB_VERSION
+        else:
+            if not self.virtualsdb.has_key("bakonf:db_version"):
+                raise ConfigurationError(virtualsdb, "Invalid database contents!")
+            currvers = self.virtualsdb["bakonf:db_version"]
+            if currvers != DB_VERSION:
+                raise ConfigurationError(virtualsdb, "Invalid database version '%s'" % currvers)
         
     def _findfile(self, name):
         """Locate a file's entry in the virtuals database.
@@ -428,7 +444,7 @@ class FileManager(object):
     def notifywritten(self, path):
         # If a file hasn't been found (as it is with directories), the
         # worst case is that we ignore that we backed up that file.
-        if path in self.files:
+        if self.backuplevel == 0 and path in self.files:
             self.virtualsdb["file:/%s" % path] = self.files[path].serialize()
 
 class MetaOutput(object):
@@ -555,7 +571,7 @@ class BackupManager(object):
         if verbose:
             stime = time.time()
             print "Scanning files..."
-        self.fs_manager = fm = FileManager(self.fs_include, self.fs_exclude, self.fs_virtualsdb)
+        self.fs_manager = fm = FileManager(self.fs_include, self.fs_exclude, self.fs_virtualsdb, self.options.level)
         fm.run()
         errorlist = list(fm.errorlist)
         fs_list = fm.memberlist
@@ -698,6 +714,9 @@ See the manpage for more informations. Defaults are:
     op.add_option("-d", "--dir", dest="destdir",
                   help="DIRECTORY where to store the archive",
                   metavar="DIRECTORY", default="/var/lib/bakonf/archives")
+    op.add_option("-l", "--level", dest="level",
+                  help="specify the LEVEL of the backup: 0, 1",
+                  metavar="LEVEL", default=1, type="int")
     op.add_option("-g", "--gzip", dest="compression",
                    help="enable compression with gzip",
                    action="store_const", const=1, default=0)
@@ -717,6 +736,10 @@ See the manpage for more informations. Defaults are:
 
     if not options.do_files and not options.do_metas:
         print >>sys.stderr, "Error: nothing to backup!"
+        sys.exit(1)
+
+    if not options.level in (0, 1):
+        print >>sys.stderr, "Error invalid backup level %u, must be 0 or 1." % options.level
         sys.exit(1)
 
     bm = BackupManager(options)
