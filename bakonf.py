@@ -27,15 +27,16 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.10 $"
+__version__ = "$Revision: 1.11 $"
 PKG_VERSION = "0.5"
 DB_VERSION  = "1"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
+# $Id: bakonf.py,v 1.11 2002/12/19 05:11:18 iusty Exp $
 
 from __future__ import generators
 from optik import OptionParser
 import md5, sha, stat, os, sys, pwd, grp, types, glob, re
-import time, errno, StringIO, xml.dom.minidom, commands
+import time, StringIO, xml.dom.minidom, commands
 import tarfile, bsddb
 
 def enumerate(collection):
@@ -55,7 +56,8 @@ class ConfigurationError(Exception):
         self.error = error
         
     def __str__(self):
-        return "ConfigurationError in file '%s': %s" % (self.filename, self.error)
+        return "ConfigurationError in file '%s': %s" % (self.filename,
+                                                        self.error)
 
     
 class FileState(object):
@@ -69,7 +71,8 @@ class FileState(object):
     compare.
 
     """
-    __slots__ = ('name', 'mode', 'user', 'group', 'size', 'mtime', 'lnkdest', 'virtual', 'force', '_md5', '_sha')
+    __slots__ = ('name', 'mode', 'user', 'group', 'size', 'mtime',
+                 'lnkdest', 'virtual', 'force', '_md5', '_sha')
     
     def __init__(self, **kwargs):
         """Initialize the members of this instance.
@@ -82,9 +85,11 @@ class FileState(object):
         
         """
         if len(kwargs) != 1:
-            raise ValueError("Invalid appelation of constructor - give either filename or serialdata")
+            raise ValueError("Invalid appelation of constructor "
+                             "- give either filename or serialdata")
         if 'filename' not in kwargs and 'serialdata' not in kwargs:
-            raise ValueError("Invalid appelation of constructor - give either filename or serialdata")
+            raise ValueError("Invalid appelation of constructor "
+                             "- give either filename or serialdata")
         if 'filename' in kwargs:
             # This means a physical file
             self.name = kwargs['filename']
@@ -164,18 +169,22 @@ class FileState(object):
         """
         if type(self) != type(other):
             return NotImplemented
-        if self.virtual == other.virtual:
-            raise "Comparison of two files of the same kind (virtual or non-virtual)!"
+        assert self.virtual != other.virtual, \
+               "Comparison of two files of the same kind (%u)!" % self.virtual
         if self.force or other.force:
             return 0
         if stat.S_ISLNK(self.mode) and stat.S_ISLNK(other.mode):
             # Both files are symlinks
-            return self.lnkdest == other.lnkdest and self.user == other.user and self.group == other.group
+            return self.lnkdest == other.lnkdest and \
+                   self.user == other.user and \
+                   self.group == other.group
         elif stat.S_ISREG(self.mode) and stat.S_ISREG(other.mode):
             # Both files are regular files
             # I hope here python optimizes in cases where the sizes differ,
-            # and doesn't read the md5 in case it is not needed :)
-            return self.size == other.size and self.md5 == other.md5 and self.sha == other.sha
+            # and doesn't compute the hashes in case it is not needed :)
+            return self.size == other.size and \
+                   self.md5 == other.md5 and \
+                   self.sha == other.sha
         else:
             return 0
         return 0
@@ -186,11 +195,13 @@ class FileState(object):
     
     def __str__(self):
         """Return a stringified version of self, usefull for debugging."""
-        ret = """<FileState instance for %s file '%s'""" % (self.virtual and "virtual" or "physical", self.name)
+        ret = """<FileState instance for %s file '%s'""" % \
+              (self.virtual and "virtual" or "physical", self.name)
         if self.force:
             ret += ", unreadable -> will be selected>"
         else:
-            ret += ", size: %u, u/g: %s/%s, md5: %s, sha: %s, mtime: %u>" % (self.size, self.user, self.group, self.md5, self.sha, self.mtime)
+            ret += ", size: %u, u/g: %s/%s, md5: %s, sha: %s, mtime: %u>" % \
+                   (self.size, self.user, self.group, self.md5, self.sha, self.mtime)
         return ret
 
     def getmd5(self):
@@ -246,7 +257,8 @@ class FileState(object):
 
     def unserialize(self, str):
         # If the following raises ValueError, the parent must! catch it
-        (name, mode, user, group, size, mtime, lnkdest, md5sum, shasum) = str.split('\0')
+        (name, mode, user, group, size, mtime, lnkdest, md5sum, shasum) \
+               = str.split('\0')
         mode = int(mode)
         size = long(size)
         mtime = int(mtime)
@@ -283,7 +295,8 @@ class SubjectFile(object):
             try:
                 self.virtual = FileState(serialdata=virtualdata)
             except ValueError, e:
-                print >>sys.stderr, "Unable to serialize the file '%s': %s" % (name, e)
+                print >>sys.stderr, "Unable to serialize the file '%s': %s" % \
+                      (name, e)
                 self.force = 1
                 self.virtual = None
             else:
@@ -294,7 +307,8 @@ class SubjectFile(object):
         
     def __str__(self):
         """Nice string version of self"""
-        return "<SubjectFile instance, virtual %s, physical %s>" % (self.virtual, self.physical)
+        return "<SubjectFile instance, virtual %s, physical %s>" % \
+               (self.virtual, self.physical)
 
     def needsbackup(self):
         """Checks whether this file needs backup."""
@@ -307,7 +321,24 @@ class SubjectFile(object):
 
 class FileManager(object):
     """Class which deals with overall issues of selecting files
-    for backup."""
+    for backup.
+
+    An instance is created by giving it the desired options (see the
+    constructor). Afterwards, the run() method will _checksources() to
+    create the filelist, and _makelist to populate that memberlist
+    with files and their parent dirs.
+
+    Other data members are subjects, which holds associations between
+    filenames and the SubjectFile instances, useful for later updating
+    the database, and errorlist, which contains tuples (filename,
+    error string) with files which could not be backed up. The list
+    scanned is a list which contains already-processed names, so that
+    we don't double-add to the archive.
+
+    """
+    __slots__ = ('scanlist', 'excludelist', 'errorlist', 'virtualsdb', \
+                 'backuplevel', 'subjects', 'scanned', 'filelist', 'memberlist')
+    
     def __init__(self, scanlist, excludelist, virtualsdb, backuplevel):
         """Constructor for class FileManager."""
         self.scanlist = scanlist
@@ -330,7 +361,8 @@ class FileManager(object):
                 raise ConfigurationError(virtualsdb, "Invalid database contents!")
             currvers = self.virtualsdb["bakonf:db_version"]
             if currvers != DB_VERSION:
-                raise ConfigurationError(virtualsdb, "Invalid database version '%s'" % currvers)
+                raise ConfigurationError(virtualsdb, \
+                                         "Invalid database version '%s'" % currvers)
         
     def _findfile(self, name):
         """Locate a file's entry in the virtuals database.
@@ -341,11 +373,11 @@ class FileManager(object):
 
         """
         
-        if self.virtualsdb.has_key("file:/%s" % name):
-            virtualdata = self.virtualsdb["file:/%s" % name]
+        key = "file:/%s" % name
+        if self.virtualsdb.has_key(key):
+            virtualdata = self.virtualsdb[key]
         else:
             virtualdata = None
-            
         return SubjectFile(name,virtualdata)
 
     def _helper(self, filelist, dirname, names):
@@ -364,7 +396,8 @@ class FileManager(object):
                 statres = os.lstat(fullpath)
             except OSError, e:
                 self.errorlist.append((fullpath, e.strerror))
-                print >>sys.stderr, "Cannot stat file %s, reason: '%s'. Will not be archived." % (fullpath, e.strerror)
+                print >>sys.stderr, "Cannot stat file %s, reason: '%s'. " \
+                      "Will not be archived." % (fullpath, e.strerror)
             else:
                 if not stat.S_ISDIR(statres.st_mode):
                     filelist += self._scanfile(fullpath)
@@ -387,7 +420,7 @@ class FileManager(object):
         self.scanned.append(path)
         sf = self._findfile(path)
         if sf.needsbackup():
-            self.files[sf.name] = sf
+            self.subjects[sf.name] = sf
             return [sf.name]
         else:
             return []
@@ -402,7 +435,7 @@ class FileManager(object):
     def _checksources(self):
         """Examine the list of sources and process them."""
         biglist = []
-        self.files = {}
+        self.subjects = {}
         self.scanned = []
         for item in self.scanlist:
             if self._isexcluded(item) or item in self.scanned:
@@ -414,27 +447,30 @@ class FileManager(object):
                 biglist.extend(self._scanfile(item))
         self.filelist = biglist
 
-    def _addparents(self, item, list):
-        """Extract the parents of a certain file/directory.
+    def addparents(item, list):
+        """Smartly insert a filename into a list.
 
         This function extracts the parents of an item and puts them in
         proper order in the given list, so that tar gets the file list
-        sorted properly.
+        sorted properly. Then it adds the given filename.
 
         """
         base = os.path.dirname(item)
         if base == "/":
             return
-        self._addparents(base, list)
+        FileManager.addparents(base, list)
         if not base in list:
             list.append(base)
+        if not item in list:
+            list.append(item)
+            
+    addparents = staticmethod(addparents)
     
     def _makelist(self):
         """Creates the full list of items to be put in the archive."""
-        pathlist = []
+        self.memberlist = []
         for path in self.filelist:
-            self._addparents(path, pathlist)
-        self.memberlist = pathlist + self.filelist
+            self.addparents(path, self.memberlist)
         
     def run(self):
         """Run the selection process."""
@@ -442,10 +478,23 @@ class FileManager(object):
         self._makelist()
 
     def notifywritten(self, path):
+        """Notify that a file has been archived.
+
+        This method is called by the BackupManager when the archive
+        containing a file has been successfuly written to disk and
+        closed. In turn, we update the file's entry in the virtuals
+        database with the checksums written.
+        
+        """
         # If a file hasn't been found (as it is with directories), the
         # worst case is that we ignore that we backed up that file.
-        if self.backuplevel == 0 and path in self.files:
-            self.virtualsdb["file:/%s" % path] = self.files[path].serialize()
+        if self.backuplevel == 0 and path in self.subjects:
+            self.virtualsdb["file:/%s" % path] = self.subjects[path].serialize()
+
+    def close(self):
+        """Ensure database has been written to disc."""
+        
+        self.virtualsdb.close()
 
 class MetaOutput(object):
     """Denoted a meta-information to be stored in an archive.
@@ -454,6 +503,8 @@ class MetaOutput(object):
     file. It will store the output of a command in the archive.
 
     """
+    __slots__ = ('command', 'destination', 'errors')
+    
     def __init__(self, command, destination):
         """Constructor for the MetaOutput class."""
         self.command = command
@@ -477,7 +528,8 @@ class MetaOutput(object):
                 err = "unknown status code %i" % status
             self.errors = (self.command, err)
             nret = 0
-            print >>sys.stderr, "Warning: command '%s' %s. Output is still stored in the archive" % (self.command, err)
+            print >>sys.stderr, "Warning: command '%s' %s. Output is " \
+                  "still stored in the archive" % (self.command, err)
         fhandle = StringIO.StringIO()
         fhandle.write(output)
         ti = genfakefile(fhandle, name=os.path.join("meta", self.destination))
@@ -536,7 +588,8 @@ class BackupManager(object):
 
         self.fs_virtualsdb = "/etc/bakonf/virtuals.db"
         for config in masterdom.firstChild.getElementsByTagName("config"):
-            for elem in [x for x in config.childNodes if x.nodeType == xml.dom.Node.ELEMENT_NODE]:
+            for elem in [x for x in config.childNodes if
+                         x.nodeType == xml.dom.Node.ELEMENT_NODE]:
                 if elem.tagName == "virtualsdb":
                     self.fs_virtualsdb = elem.getAttribute("path")
 
@@ -546,16 +599,15 @@ class BackupManager(object):
             for fses in de.firstChild.getElementsByTagName("filesystem"):
                 for scans in fses.getElementsByTagName("scan"):
                     path = scans.getAttribute("path")
-                    #print "Will scan %s=%s" % (path, glob.glob(path))
                     self.fs_include += map(os.path.abspath, glob.glob(path))
                 for regexcl in fses.getElementsByTagName("noscan"):
-                    #print "Will exclude %s" % regexcl.getAttribute("regex")
                     self.fs_exclude.append(regexcl.getAttribute("regex"))
 
             for metas in de.firstChild.getElementsByTagName("meta"):
                 for cmdouts in metas.getElementsByTagName("storeoutput"):
-                    #print "Will store the output of %s in file %s" % (cmdouts.getAttribute("command"), cmdouts.getAttribute("destination"))
-                    self.meta_outputs.append(MetaOutput(cmdouts.getAttribute("command"), cmdouts.getAttribute("destination")))
+                    self.meta_outputs.append(MetaOutput( \
+                        cmdouts.getAttribute("command"), \
+                        cmdouts.getAttribute("destination")))
 
             de.unlink()
 
@@ -571,7 +623,8 @@ class BackupManager(object):
         if verbose:
             stime = time.time()
             print "Scanning files..."
-        self.fs_manager = fm = FileManager(self.fs_include, self.fs_exclude, self.fs_virtualsdb, self.options.level)
+        self.fs_manager = fm = FileManager(self.fs_include, self.fs_exclude,
+                                           self.fs_virtualsdb, self.options.level)
         fm.run()
         errorlist = list(fm.errorlist)
         fs_list = fm.memberlist
@@ -590,7 +643,8 @@ class BackupManager(object):
                 archive.add(name=path, arcname=arcx, recursive=0)
             except IOError, e:
                 errorlist.append((path, e.strerror))
-                print >>sys.stderr, "Cannot read file %s, error: '%s'. Will not be archived." % (path, e.strerror)
+                print >>sys.stderr, "Cannot read file %s, error: '%s'. " \
+                      "Will not be archived." % (path, e.strerror)
             else: # Successful archiving of the member
                 donelist.append(path)
         if verbose:
@@ -647,7 +701,9 @@ class BackupManager(object):
         tarh.posix = 0 # Need to work around 100 char filename length
 
         my_hostname = os.uname()[1]
-        signature = """Archive generated by bakonf ver. %s - www.nongnu.org/bakonf\nHost: %s\nDate: %s\nOptions:""" % (PKG_VERSION, my_hostname, time.strftime("%F %T%z"))
+        signature = "Archive generated by bakonf ver. %s - www.nongnu.org/" \
+                    "bakonf\nHost: %s\nDate: %s\nOptions:" \
+                    % (PKG_VERSION, my_hostname, time.strftime("%F %T%z"))
 
         # Archiving files
         if options.do_files:
@@ -678,6 +734,8 @@ class BackupManager(object):
         if options.do_files:
             for path in self.fs_donelist:
                 self.fs_manager.notifywritten(path)
+            # Close the db now
+            self.fs_manager.close()
         
 
 def genfakefile(sio=None, name = None, user='root', group='root', mtime=None):
@@ -699,7 +757,12 @@ if __name__ == "__main__":
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
     def_file = "%s.tar" % archive_id
     config_file = "/etc/bakonf/bakonf.xml"
-    op = OptionParser(version="%%prog %s\nWritten by Iustin Pop\n\nCopyright (C) 2002 Iustin Pop\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE." % PKG_VERSION, usage="""usage: %prog [options]
+    op = OptionParser(version="%%prog %s\nWritten by Iustin Pop\n\nCopyright" \
+                      " (C) 2002 Iustin Pop\nThis is free software; see the " \
+                      "source for copying conditions.  There is NO\nwarranty" \
+                      "; not even for MERCHANTABILITY or FITNESS FOR A " \
+                      "PARTICULAR PURPOSE." % PKG_VERSION, \
+                      usage="""usage: %prog [options]
 
 See the manpage for more informations. Defaults are:
   - archives will be named hostname-YYYY-MM-DD.tar
@@ -739,7 +802,8 @@ See the manpage for more informations. Defaults are:
         sys.exit(1)
 
     if not options.level in (0, 1):
-        print >>sys.stderr, "Error invalid backup level %u, must be 0 or 1." % options.level
+        print >>sys.stderr, "Error invalid backup level %u, must be 0 or 1." \
+              % options.level
         sys.exit(1)
 
     bm = BackupManager(options)
