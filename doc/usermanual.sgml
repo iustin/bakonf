@@ -1,4 +1,7 @@
-<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V4.2//EN">
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V4.2//EN" [
+<!ENTITY apndx SYSTEM "fdl-appendix.sgml">
+]>
+
 <article class="specification">
   <articleinfo>
     <author>
@@ -424,4 +427,5 @@ Example GNU/Linux proc configuration file (included in the distribution):
       </section>
     </section>
   </section>
+&apndx;
 </article>
