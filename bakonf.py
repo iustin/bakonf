@@ -27,11 +27,11 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.11 $"
+__version__ = "$Revision: 1.12 $"
 PKG_VERSION = "0.5"
 DB_VERSION  = "1"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
-# $Id: bakonf.py,v 1.11 2002/12/19 05:11:18 iusty Exp $
+# $Id: bakonf.py,v 1.12 2002/12/20 01:56:22 iusty Exp $
 
 from __future__ import generators
 from optik import OptionParser
@@ -121,7 +121,7 @@ class FileState(object):
             else:
                 self.lnkdest = ""
         except (OSError, IOError), e:
-            print >>sys.stderr, "Cannot read: %s" % e
+            print >>sys.stderr, "Error: cannot read: %s" % e
             self.force = 1
         else:
             try:
@@ -177,7 +177,8 @@ class FileState(object):
             # Both files are symlinks
             return self.lnkdest == other.lnkdest and \
                    self.user == other.user and \
-                   self.group == other.group
+                   self.group == other.group and \
+                   stat.S_IMODE(self.mode) == stat.S_IMODE(other.mode)
         elif stat.S_ISREG(self.mode) and stat.S_ISREG(other.mode):
             # Both files are regular files
             # I hope here python optimizes in cases where the sizes differ,
@@ -319,14 +320,14 @@ class SubjectFile(object):
 
         return self.physical.serialize()
 
+
 class FileManager(object):
     """Class which deals with overall issues of selecting files
     for backup.
 
     An instance is created by giving it the desired options (see the
-    constructor). Afterwards, the run() method will _checksources() to
-    create the filelist, and _makelist to populate that memberlist
-    with files and their parent dirs.
+    constructor). Afterwards, the checksources() method will create
+    the filelist.
 
     Other data members are subjects, which holds associations between
     filenames and the SubjectFile instances, useful for later updating
@@ -356,13 +357,19 @@ class FileManager(object):
         self.virtualsdb = bsddb.hashopen(virtualsdb, mode)
         if backuplevel == 0:
             self.virtualsdb["bakonf:db_version"] = DB_VERSION
+            self.virtualsdb["bakonf:db_date"] = str(time.time())
         else:
-            if not self.virtualsdb.has_key("bakonf:db_version"):
-                raise ConfigurationError(virtualsdb, "Invalid database contents!")
+            for check in ("bakonf:db_version", "bakonf:db_date"):
+                if not self.virtualsdb.has_key(check):
+                    raise ConfigurationError(virtualsdb, "Invalid database contents!")
             currvers = self.virtualsdb["bakonf:db_version"]
             if currvers != DB_VERSION:
                 raise ConfigurationError(virtualsdb, \
                                          "Invalid database version '%s'" % currvers)
+            dbtime = float(self.virtualsdb["bakonf:db_date"])
+            if time.time() - dbtime > 8 * 86400:
+                print >>sys.stderr, "Warning: database is more than 8 days old!"
+        return
         
     def _findfile(self, name):
         """Locate a file's entry in the virtuals database.
@@ -372,7 +379,7 @@ class FileManager(object):
         which will be always selected for backup.
 
         """
-        
+
         key = "file:/%s" % name
         if self.virtualsdb.has_key(key):
             virtualdata = self.virtualsdb[key]
@@ -380,7 +387,7 @@ class FileManager(object):
             virtualdata = None
         return SubjectFile(name,virtualdata)
 
-    def _helper(self, filelist, dirname, names):
+    def _helper(self, arg, dirname, names):
         """Helper for the scandir method.
 
         This function scans a directory's entries and processes the
@@ -396,12 +403,13 @@ class FileManager(object):
                 statres = os.lstat(fullpath)
             except OSError, e:
                 self.errorlist.append((fullpath, e.strerror))
-                print >>sys.stderr, "Cannot stat file %s, reason: '%s'. " \
-                      "Will not be archived." % (fullpath, e.strerror)
+                print >>sys.stderr, "Error: cannot stat '%s': '%s'. " \
+                      "Not archived." % (fullpath, e.strerror)
             else:
                 if not stat.S_ISDIR(statres.st_mode):
-                    filelist += self._scanfile(fullpath)
-                    
+                    self._scanfile(fullpath)
+        return
+    
     def _scandir(self, path):
         """Gather the files needing backup under a directory.
 
@@ -409,9 +417,8 @@ class FileManager(object):
         path - the directory which should be recusrively descended.
 
         """
-        mylist = []
-        os.path.walk(path, self._helper, mylist)
-        return mylist
+        os.path.walk(path, self._helper, None)
+        return
 
     def _scanfile(self, path):
         """Examine a file for inclusion in the backup."""
@@ -421,6 +428,7 @@ class FileManager(object):
         sf = self._findfile(path)
         if sf.needsbackup():
             self.subjects[sf.name] = sf
+            FileManager.addparents(path, self.filelist)
             return [sf.name]
         else:
             return []
@@ -432,9 +440,9 @@ class FileManager(object):
                 return 1
         return 0
 
-    def _checksources(self):
+    def checksources(self):
         """Examine the list of sources and process them."""
-        biglist = []
+        self.filelist = []
         self.subjects = {}
         self.scanned = []
         for item in self.scanlist:
@@ -442,11 +450,11 @@ class FileManager(object):
                 continue
             st = os.lstat(item)
             if stat.S_ISDIR(st.st_mode):
-                biglist.extend(self._scandir(item))
+                self._scandir(item)
             else:
-                biglist.extend(self._scanfile(item))
-        self.filelist = biglist
-
+                self._scanfile(item)
+        return
+    
     def addparents(item, list):
         """Smartly insert a filename into a list.
 
@@ -466,17 +474,6 @@ class FileManager(object):
             
     addparents = staticmethod(addparents)
     
-    def _makelist(self):
-        """Creates the full list of items to be put in the archive."""
-        self.memberlist = []
-        for path in self.filelist:
-            self.addparents(path, self.memberlist)
-        
-    def run(self):
-        """Run the selection process."""
-        self._checksources()
-        self._makelist()
-
     def notifywritten(self, path):
         """Notify that a file has been archived.
 
@@ -528,11 +525,11 @@ class MetaOutput(object):
                 err = "unknown status code %i" % status
             self.errors = (self.command, err)
             nret = 0
-            print >>sys.stderr, "Warning: command '%s' %s. Output is " \
-                  "still stored in the archive" % (self.command, err)
+            print >>sys.stderr, "Warning: '%s' %s." \
+                  % (self.command, err)
         fhandle = StringIO.StringIO()
         fhandle.write(output)
-        ti = genfakefile(fhandle, name=os.path.join("meta", self.destination))
+        ti = genfakefile(fhandle, name=os.path.join("metadata", self.destination))
         archive.addfile(ti, fhandle)
         return nret
         
@@ -603,7 +600,7 @@ class BackupManager(object):
                 for regexcl in fses.getElementsByTagName("noscan"):
                     self.fs_exclude.append(regexcl.getAttribute("regex"))
 
-            for metas in de.firstChild.getElementsByTagName("meta"):
+            for metas in de.firstChild.getElementsByTagName("metadata"):
                 for cmdouts in metas.getElementsByTagName("storeoutput"):
                     self.meta_outputs.append(MetaOutput( \
                         cmdouts.getAttribute("command"), \
@@ -625,9 +622,9 @@ class BackupManager(object):
             print "Scanning files..."
         self.fs_manager = fm = FileManager(self.fs_include, self.fs_exclude,
                                            self.fs_virtualsdb, self.options.level)
-        fm.run()
+        fm.checksources()
         errorlist = list(fm.errorlist)
-        fs_list = fm.memberlist
+        fs_list = fm.filelist
         if verbose:
             ntime = time.time()
             print "Done scanning, in %.4f seconds" % (ntime - stime)
@@ -643,8 +640,8 @@ class BackupManager(object):
                 archive.add(name=path, arcname=arcx, recursive=0)
             except IOError, e:
                 errorlist.append((path, e.strerror))
-                print >>sys.stderr, "Cannot read file %s, error: '%s'. " \
-                      "Will not be archived." % (path, e.strerror)
+                print >>sys.stderr, "Error: cannot read '%s': '%s'. " \
+                      "Not archived." % (path, e.strerror)
             else: # Successful archiving of the member
                 donelist.append(path)
         if verbose:
@@ -686,7 +683,7 @@ class BackupManager(object):
         the command line and the configuration file.
         
         """
-        final_tar = os.path.join(self.options.destdir, "%s.tar" % options.archive_id)
+        final_tar = os.path.join(self.options.destdir, "%s-L%u.tar" % (options.archive_id, options.level))
         if options.compression == 1:
             tarmode = "w:gz"
             final_tar += ".gz"
@@ -777,9 +774,9 @@ See the manpage for more informations. Defaults are:
     op.add_option("-d", "--dir", dest="destdir",
                   help="DIRECTORY where to store the archive",
                   metavar="DIRECTORY", default="/var/lib/bakonf/archives")
-    op.add_option("-l", "--level", dest="level",
+    op.add_option("-L", "--level", dest="level",
                   help="specify the LEVEL of the backup: 0, 1",
-                  metavar="LEVEL", default=1, type="int")
+                  metavar="LEVEL", default=None, type="int")
     op.add_option("-g", "--gzip", dest="compression",
                    help="enable compression with gzip",
                    action="store_const", const=1, default=0)
@@ -801,6 +798,10 @@ See the manpage for more informations. Defaults are:
         print >>sys.stderr, "Error: nothing to backup!"
         sys.exit(1)
 
+    if options.level is None:
+        print >>sys.stderr, "You must give the backup level, either 0 or 1."
+        sys.exit(1)
+        
     if not options.level in (0, 1):
         print >>sys.stderr, "Error invalid backup level %u, must be 0 or 1." \
               % options.level
