@@ -13,9 +13,10 @@ BuildArch: noarch
 
 %description
 bakonf is a tool designed to make backups of the configuration
-files of a Linux (Unix) system. Its aim is to use various methods
-in order to reduce the size of the backup to a reasonable minimum,
-in order to be useful for remote/unattended servers
+files of a GNU/Linux or Unix-like system. Its aim is to use
+various methods in order to reduce the size of the backup to a
+reasonable minimum, in order to be useful for remote/unattended
+servers.
 %prep
 %setup -q
 

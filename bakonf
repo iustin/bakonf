@@ -20,8 +20,43 @@
 
 set -e
 
-DEST_ARCHIVE="`hostname`-`date +'%F'`.tar.bz2"
+DEST_FILE="`hostname`-`date +'%F'`.tar.bz2"
+DEST_DIR="/var/lib/bakonf"
+
+TEMP=`getopt --options f:d: --longoptions file:,directory: --name bakonf -- "$@"`
+
+if [ $? != 0 ]; then exit 1; fi
+
+eval set -- "$TEMP"
+while true ; do
+    case "$1" in
+        -h|--help) echo "Help"; 
+            shift
+            ;;
+        -f|--file)
+            DEST_FILE=`basename "$2"`;
+            if [ `dirname "$2"` != "." ]; then
+                DEST_DIR=`dirname "$2"`
+            fi
+            shift 2
+            ;;
+        -d|--directory)
+            DEST_DIR="$2";
+            shift 2
+            ;;
+        --) 
+            shift
+            break
+            ;;
+        *)
+            echo "Internal error!"
+            exit 1
+            ;;
+    esac
+done
+DEST_ARCHIVE="$DEST_DIR/$DEST_FILE"
 ./bakonf_scanner.py
-tar --files-from filenames.lst -c --posix --bzip2 --force-local -f "$DEST_ARCHIVE" \
-    --label="Configuration backup for `hostname` by bakonf" --absolute-names \
+tar --files-from filenames.lst -c --posix --bzip2 --force-local \
+    -f "$DEST_ARCHIVE" --label="Configuration backup for `hostname` by bakonf" \
+    --absolute-names \
     --no-recursion
