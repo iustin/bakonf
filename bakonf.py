@@ -27,12 +27,13 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.2 $"
+__version__ = "$Revision: 1.3 $"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
 
 from __future__ import generators
 from optik import OptionParser
-import rpm, md5, stat, os, sys, pwd, grp, types, glob, shlex, re, time
+import rpm, md5, stat, os, sys, pwd, grp, types, glob, shlex, re
+import time, random, errno, atexit, popen2
 
 def enumerate(collection):
     'Generates an indexed series:  (0,coll[0]), (1,coll[1]) ...'     
@@ -234,7 +235,7 @@ class SubjectFile(object):
 class BackupManager(object):
     """Class which deals with overall issues of selecting files
     for backup."""
-    def __init__(self, configfile="/etc/bakonf/bakonf.cfg", filename
+    def __init__(self, configfile="/etc/bakonf/bakonf.conf", filename
                  = "filenames.lst", separator="\n"):
         """Constructor for class BackupManager."""
         self.ts = rpm.TransactionSet()
@@ -371,32 +372,137 @@ class BackupManager(object):
         self._parsecfg()
         self._checksources()
         self._writelist()
+
+    def writepkglist(self, filename):
+        lst = []
+        f = file(filename, "w")
+        mi = self.ts.dbMatch()
+        hdr = mi.next()
+        while hdr is not None:
+            lst.append(hdr.sprintf("%{NAME}-%{VERSION}-%{RELEASE} %{ARCH} %{SIGMD5}"))
+            hdr = mi.next()
+        lst.sort()
+        for line in lst:
+            f.write("%s\n" % line)
+        f.close()
         
+def rmrf(path):
+    #os.system("echo rm -rf '%s'" % path)
+    os.system("rmdir '%s'" % path)
+    
+def gentempdir(prefix):
+    counter = 0
+    while counter < 1000:
+        counter += 1
+        myint = random.randrange(100000000, 999999999, 1)
+        fullpath = os.path.join(prefix, "%s" % myint)
+        try:
+            os.mkdir(fullpath, 0700)
+            atexit.register(rmrf, fullpath)
+            return fullpath
+        except OSError, e:
+            if e.errno == errno.EEXIST:
+                continue
+            else:
+                raise
+    return None
+
 if __name__ == "__main__":
-    def_file = "%s-%s.tar" % (os.uname()[1], time.strftime("%F"))
+    os.umask(0077)
+    my_hostname = os.uname()[1]
+    archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
+    def_file = "%s.tar" % archive_id
     config_file = "bakonf.cfg"
-    op = OptionParser(version = "0.2")
+    op = OptionParser(version="0.2", usage="""usage: %prog [options]
+
+See the manpage for more informations. Defaults are:
+  - workdir is /var/lib/bakonf/work
+  - archives will be named hostname-YYYY-MM-DD.tar
+  - archives will be stored under /var/lib/bakonf/archives
+  """)
     op.add_option("-c", "--config-file", dest="configfile",
                   help="configuration FILE [%s]" % config_file,
                   metavar="FILE", default=config_file)
     op.add_option("-f", "--file", dest="file",
                   help="name of the ARCHIVE to be generated",
                   metavar="ARCHIVE", default=def_file)
-    op.add_option("-d", "--dir", dest="dir",
+    op.add_option("-d", "--dir", dest="destdir",
                   help="DIRECTORY where to store the archive",
                   metavar="DIRECTORY", default="/var/lib/bakonf")
-    op.add_option("-w", "--work-dir", dest="work",
+    op.add_option("-w", "--work-dir", dest="workdir",
                   help="DIRECTORY to use for temporary files (NOT world readable/writable!)",
-                  metavar="DIRECTORY", default=".")
-    op.add_option("-n", "--null", dest="separator", action="store_const",
-                  const="\0", help="separate the filenames with NULL")
-    op.add_option("-l", "--newline", dest="separator", action="store_const",
-                  const="\n", help="separate the filenames with" \
-                  "newline  [default]",
-                  default="\n")
+                  metavar="DIRECTORY", default="work/")
+##    op.add_option("-n", "--null", dest="separator", action="store_const",
+##                  const="\0", help="separate the filenames with " \
+##                  "NULL (tar only)")
+##    op.add_option("-l", "--newline", dest="separator", action="store_const",
+##                  const="\n", help="separate the filenames with" \
+##                  " newline [default]",
+##                  default="\n")
     op.add_option("-v", "--verbose", dest="verbose", action="store_true",
                   help="be verbose in operation", default=0)
     (options, args) = op.parse_args()
+
+    # Create workdir
+    wdir = gentempdir(options.workdir)
+    if wdir == None:
+        print "Can't create working directory, aborting."
+        sys.exit(1)
+
+    filenames_lst = os.path.join(wdir, 'filenames.lst')
     bm = BackupManager(configfile=options.configfile,
-                       separator=options.separator, filename = "" )
+                       separator="\n", filename = filenames_lst)
     bm.run()
+
+    # Create filesystem.tar
+
+    final_dir = os.path.join(wdir, archive_id)
+    os.mkdir(final_dir)
+    
+    filesystem_tar = os.path.join(final_dir, "%s-filesystem.tar" % archive_id)
+    p4 = popen2.Popen4(['/bin/tar', '--files-from', filenames_lst,
+                        '-c', '--force-local', '-f', filesystem_tar,
+                        '--label=Filesystem backup for %s' % archive_id,
+                        '--no-recursion', '--absolute-names'])
+    retcode = p4.wait()
+    taroutput = p4.fromchild.read()
+    if not (os.WIFEXITED(retcode) and os.WEXITSTATUS(retcode) == 0):
+        print "Some errors while running tar: retcode %u. Output follows:" % retcode
+        print taroutput
+    else:
+        if options.verbose:
+            print "Generated filesystem.tar, tar output was '%s':" % taroutput
+    if not os.path.isfile(filesystem_tar):
+        print "tar didn't create an archive, bailing out."
+    del p4
+
+    # Now we have the filesystem archive
+    if options.verbose:
+        print "Generating package list"
+    bm.writepkglist(os.path.join(final_dir, "packages.lst"))
+
+    # Now we have the package list
+    f = file(os.path.join(final_dir, "uname"), "w")
+    f.write("%s\n" % (os.uname(),))
+    f.close()
+
+    # Now to generate the final tar, compressed
+
+    final_tar = os.path.join(options.destdir, "%s.tar" % archive_id)
+    sys.stdout.flush()
+    p4 = popen2.Popen4(['/bin/tar',
+                        '-c', '--force-local', '-f', final_tar,
+                        '--label=Configuration backup for %s' % archive_id,
+                        '-C', wdir, '--gzip',
+                        archive_id])
+    retcode = p4.wait()
+    taroutput = p4.fromchild.read()
+    if not (os.WIFEXITED(retcode) and os.WEXITSTATUS(retcode) == 0):
+        print "Some errors while running tar: retcode %u. Output follows:" % retcode
+        print taroutput
+    else:
+        if options.verbose:
+            print "Generated filesystem.tar, tar output was '%s':" % taroutput
+    if not os.path.isfile(filesystem_tar):
+        print "tar didn't create an archive, bailing out."
+    del p4
