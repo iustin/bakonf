@@ -27,7 +27,7 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.7 $"
+__version__ = "$Revision: 1.8 $"
 PKG_VERSION = "0.5"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
 
@@ -237,6 +237,40 @@ class FileState(object):
     md5 = property(fget=getmd5, doc="The MD5 hash of the file's contents")
     sha = property(fget=getsha, doc="The SHA hash of the file's contents")
 
+    def serialize(self):
+        out = ""
+        out += "%s\0" % self.name
+        out += "%i\0" % self.mode
+        out += "%s\0" % self.user
+        out += "%s\0" % self.group
+        out += "%i\0" % self.size
+        out += "%i\0" % self.mtime
+        out += "%s\0" % self.lnkdest
+        out += "%s\0" % self.md5
+        out += "%s" % self.sha
+
+        return out
+
+    def unserialize(self, str):
+        # If the following raises ValueError, the parent must! catch it
+        (name, mode, user, group, size, mtime, lnkdest, md5sum, shasum) = str.split('\0')
+        mode = int(mode)
+        size = long(size)
+        mtime = int(mtime)
+        if len(md5sum) != 32 or len(shasum) != 40:
+            raise ValueError("Invalid hash length!")
+        # Here we should have all the data needed
+        self.virtual = 1
+        self.force = 0
+        self.name = name
+        self.mode = mode
+        self.user = user
+        self.group = group
+        self.size = size
+        self.mtime = mtime
+        self.lnkdest = lnkdest
+        self._md5 = md5sum
+        self._sha = shasum
         
 class SubjectFile(object):
     def __init__(self, fi):
