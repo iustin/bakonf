@@ -6,7 +6,7 @@ License: GPL
 Vendor: Iustin Pop
 Packager: Iustin Pop <iusty@k1024.org>
 Group: Applications/System
-URL: http://www
+URL: http://www.nongnu.org/bakonf/
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 BuildArch: noarch
