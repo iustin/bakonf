@@ -1,3 +1,7 @@
-# Example cron file for bakonf
+# Example cron file for bakonf 0.5
 
-#0 3 * * * root /usr/sbin/bakonf.py --bzip2
+# Weekly full backup
+#0 3 * * 0   root /usr/sbin/bakonf --bzip2 -L0
+
+# Daily incremental backup
+#0 3 * * 1-6 root /usr/sbin/bakonf --bzip2 -L1
