@@ -1,7 +1,7 @@
 Summary: A configuration file backup tool
 Name: bakonf
-Version: 0.3
-Release: 7
+Version: 0.4
+Release: 1
 License: GPL
 Vendor: Iustin Pop
 Packager: Iustin Pop <ossdevel-savannah@k1024.org>
@@ -10,7 +10,7 @@ URL: http://www
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 BuildArch: noarch
-Requires: rpm-python >= 4.1 python-optik
+Requires: rpm-python >= 4.1 python-optik tarfile
 
 %description
 bakonf is a tool designed to make backups of the configuration

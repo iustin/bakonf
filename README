@@ -4,6 +4,15 @@ bakonf is a tool designed to make backups of the configuration
 files of a GNU/Linux or Unix-like system. Its aim is to use
 various methods in order to reduce the size of the backup to a
 reasonable minimum, in order to be useful for remote/unattended
-servers.
+servers, while still backing up enough to recreate the system.
+
+The contents of the archives created contain enough information
+so that a skilled sysadmin can restore the system to a working
+state. Beside the actual information from the filesystem, the
+extra that bakonf stores is:
+    - package list, so you known exactly what you had installed
+    - uname information
+    - partition table (not yet done, must choose how to configure
+      what disk to scan)
 
 For more informations, see doc/usermanual.sgml

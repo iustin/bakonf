@@ -27,13 +27,14 @@ metadata (like installed packages, etc.)
 
 """
 
-__version__ = "$Revision: 1.4 $"
+__version__ = "$Revision: 1.5 $"
 # $Source: /alte/cvsroot/bakonf/bakonf.py,v $
 
 from __future__ import generators
 from optik import OptionParser
 import rpm, md5, stat, os, sys, pwd, grp, types, glob, shlex, re
-import time, random, errno, atexit, popen2
+import time, errno, StringIO
+import tarfile
 
 def enumerate(collection):
     'Generates an indexed series:  (0,coll[0]), (1,coll[1]) ...'     
@@ -235,13 +236,10 @@ class SubjectFile(object):
 class BackupManager(object):
     """Class which deals with overall issues of selecting files
     for backup."""
-    def __init__(self, configfile="/etc/bakonf/bakonf.conf", filename
-                 = "filenames.lst", separator="\n"):
+    def __init__(self, configfile="/etc/bakonf/bakonf.conf"):
         """Constructor for class BackupManager."""
         self.ts = rpm.TransactionSet()
         self.configfile = configfile
-        self.filename = filename
-        self.separator = separator
         
     def _findfile(self, name):
         """Locate a file's entry in the package database.
@@ -333,18 +331,14 @@ class BackupManager(object):
         if not base in list:
             list.append(base)
     
-    def _writelist(self):
-        """Writes a list of filenames to the configured
-        output file."""
-        fh = file(self.filename, "w")
+    def _makelist(self):
+        """Creates the full list of items to be put in the archive."""
         pathlist = []
         for path in self.filelist:
             self._addparents(path, pathlist)
-        for path in pathlist:
-            fh.write("%s%s" % (path, self.separator))
         for path in self.filelist:
-            fh.write("%s%s" % (path, self.separator))
-        fh.close()
+            pathlist.append(path)
+        self.memberlist = pathlist
         
     def _parsecfg(self):
         """Parses the configuration files, reading the list of sources to use."""
@@ -371,11 +365,10 @@ class BackupManager(object):
         """Do the thing."""
         self._parsecfg()
         self._checksources()
-        self._writelist()
+        self._makelist()
 
-    def writepkglist(self, filename):
+    def writepkglist(self, fhandle):
         lst = []
-        f = file(filename, "w")
         mi = self.ts.dbMatch()
         hdr = mi.next()
         while hdr is not None:
@@ -383,29 +376,20 @@ class BackupManager(object):
             hdr = mi.next()
         lst.sort()
         for line in lst:
-            f.write("%s\n" % line)
-        f.close()
+            fhandle.write("%s\n" % line)
         
-def rmrf(path):
-    #os.system("echo rm -rf '%s'" % path)
-    os.system("rmdir '%s'" % path)
-    
-def gentempdir(prefix):
-    counter = 0
-    while counter < 1000:
-        counter += 1
-        myint = random.randrange(100000000, 999999999, 1)
-        fullpath = os.path.join(prefix, "%s" % myint)
-        try:
-            os.mkdir(fullpath, 0700)
-            atexit.register(rmrf, fullpath)
-            return fullpath
-        except OSError, e:
-            if e.errno == errno.EEXIST:
-                continue
-            else:
-                raise
-    return None
+def genfakefile(sio=None, name = None, user='root', group='root', mtime=None):
+    """Generate a fake TarInfo object from a StringIO object."""
+    ti = tarfile.TarInfo()
+    ti.name = name
+    ti.uname = user
+    ti.gname = group
+    ti.mtime = mtime or time.time()
+    ti.chksum = tarfile.calc_chksum(sio.getvalue())
+    sio.seek(0, 2)
+    ti.size = sio.tell()
+    sio.seek(0, 0)
+    return ti
 
 if __name__ == "__main__":
     os.umask(0077)
@@ -413,10 +397,9 @@ if __name__ == "__main__":
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
     def_file = "%s.tar" % archive_id
     config_file = "/etc/bakonf/bakonf.conf"
-    op = OptionParser(version="%prog 0.3\nWritten by Iustin Pop\n\nCopyright (C) 2002 Iustin Pop\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.", usage="""usage: %prog [options]
+    op = OptionParser(version="%prog 0.4\nWritten by Iustin Pop\n\nCopyright (C) 2002 Iustin Pop\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.", usage="""usage: %prog [options]
 
 See the manpage for more informations. Defaults are:
-  - workdir is /var/lib/bakonf/work
   - archives will be named hostname-YYYY-MM-DD.tar
   - archives will be stored under /var/lib/bakonf/archives
   """)
@@ -429,92 +412,69 @@ See the manpage for more informations. Defaults are:
     op.add_option("-d", "--dir", dest="destdir",
                   help="DIRECTORY where to store the archive",
                   metavar="DIRECTORY", default="/var/lib/bakonf/archives")
-    op.add_option("-w", "--work-dir", dest="workdir",
-                  help="DIRECTORY to use for temporary files (NOT world readable/writable!)",
-                  metavar="DIRECTORY", default="/var/lib/bakonf/work/")
-##    op.add_option("-n", "--null", dest="separator", action="store_const",
-##                  const="\0", help="separate the filenames with " \
-##                  "NULL (tar only)")
-##    op.add_option("-l", "--newline", dest="separator", action="store_const",
-##                  const="\n", help="separate the filenames with" \
-##                  " newline [default]",
-##                  default="\n")
+    op.add_option("-g", "--gzip", dest="compression",
+                   help="enable compression with gzip",
+                   action="store_const", const=1, default=0)
+    op.add_option("-b", "--bzip2", dest="compression",
+                   help="enable compression with bzip2",
+                   action="store_const", const=2)
     op.add_option("-v", "--verbose", dest="verbose", action="store_true",
                   help="be verbose in operation", default=0)
     (options, args) = op.parse_args()
 
-    # Create workdir
-    wdir = gentempdir(options.workdir)
-    if wdir == None:
-        print "Can't create working directory, aborting."
-        sys.exit(1)
-
-    filenames_lst = os.path.join(wdir, 'filenames.lst')
-    bm = BackupManager(configfile=options.configfile,
-                       separator="\n", filename = filenames_lst)
+    if options.verbose:
+        print "Scanning filesystem..."
+    bm = BackupManager(configfile=options.configfile)
     bm.run()
 
-    # Create filesystem.tar
-
-    final_dir = os.path.join(wdir, archive_id)
-    os.mkdir(final_dir)
-    
-    filesystem_tar = os.path.join(final_dir, "%s-filesystem.tar" % archive_id)
-    p4 = popen2.Popen4(['/bin/tar', '--files-from', filenames_lst,
-                        '-c', '--force-local', '-f', filesystem_tar,
-                        '--label=Filesystem backup for %s' % archive_id,
-                        '--no-recursion', '--absolute-names'])
-    retcode = p4.wait()
-    taroutput = p4.fromchild.read()
-    if not (os.WIFEXITED(retcode) and os.WEXITSTATUS(retcode) == 0):
-        print "Some errors while running tar: retcode %u. Output follows:" % retcode
-        print taroutput
-    else:
-        if options.verbose:
-            print "Generated filesystem.tar, tar output was: '%s'" % taroutput
-    if not os.path.isfile(filesystem_tar):
-        print "tar didn't create an archive, bailing out."
-    del p4
-    # Filesystem tar created, get rid of filelist.lst
-    os.unlink(filenames_lst)
-
-    # Now we have the filesystem archive
-    packages_lst = os.path.join(final_dir, "packages.lst")
+    # Archive files
     if options.verbose:
-        print "Generating package list"
-    bm.writepkglist(packages_lst)
+        print "Archiving files..."
+    final_tar = os.path.join(options.destdir, "%s.tar" % archive_id)
+    if options.compression == 1:
+        tarmode = "w:gz"
+        final_tar += ".gz"
+    elif options.compression == 2:
+        tarmode = "w:bz2"
+        final_tar += ".bz2"
+    else:
+        tarmode = "w"
+    tarh = tarfile.open(name=final_tar, mode=tarmode)
+    tarh.posix = 0
+    tarh.add(name="/", arcname="filesystem/", recursive=0)
+    for path in bm.memberlist:
+        try:
+            if path[0] == "/":
+                arcx = os.path.join("filesystem", path[1:])
+            else:
+                arcx = os.path.join("filesystem", path)
+            tarh.add(name=path, arcname=arcx, recursive=0)
+        except IOError, e:
+            print "Cannot read file %s, error: %s" % (path, e)
+
+    # Now we have the files archived, start doing meta informations
+    # DOES NOT WORK, must use pipes... will be in 0.5 maybe
+    #meta_files=["/proc/version", "/proc/interrupts", "/proc/ioports", "/proc/iomem", "/proc/dma", "/proc/pci"]
+    #for item in meta_files:
+    #    tarh.add(name=item, arcname="meta"+item, recursive=0)
+        
+    if options.verbose:
+        print "Generating package list..."
+    fhandle = StringIO.StringIO()
+    bm.writepkglist(fhandle)
+    ti = genfakefile(fhandle, name = "meta/packages.lst")
+    tarh.addfile(ti, fhandle)
 
     # Now we have the package list
-    uname_lst = os.path.join(final_dir, "uname")
-    f = file(uname_lst, "w")
-    f.write("%s\n" % (os.uname(),))
-    f.close()
-
-    # Now to generate the final tar, compressed
-
-    final_tar = os.path.join(options.destdir, "%s.tar" % archive_id)
-    sys.stdout.flush()
-    p4 = popen2.Popen4(['/bin/tar',
-                        '-c', '--force-local', '-f', final_tar,
-                        '--label=Configuration backup for %s' % archive_id,
-                        '-C', wdir, '--gzip',
-                        archive_id])
-    retcode = p4.wait()
-    taroutput = p4.fromchild.read()
-    if not (os.WIFEXITED(retcode) and os.WEXITSTATUS(retcode) == 0):
-        print "Some errors while running tar: retcode %u. Output follows:" % retcode
-        print taroutput
-    else:
-        if options.verbose:
-            print "Generated filesystem.tar, tar output was: '%s'" % taroutput
-    if not os.path.isfile(filesystem_tar):
-        print "tar didn't create an archive, bailing out."
-    del p4
-
-    # Delete intermediary files
-    os.unlink(filesystem_tar)
-    os.unlink(packages_lst)
-    os.unlink(uname_lst)
-    os.rmdir(final_dir)
+    fhandle = StringIO.StringIO()
+    fhandle.write("%s\n" % (os.uname(),))
+    ti = genfakefile(fhandle, name = "meta/uname.txt")
+    tarh.addfile(ti, fhandle)
+    tarh.close()
+    
+    # Bug in tarfile-0.6.3
+    if tarh._extfileobj:
+        tarh.fileobj.close()
+        
     if options.verbose:
         print "Archive generated at %s" % final_tar
