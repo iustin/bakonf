@@ -50,6 +50,14 @@ import bsddb
 from optparse import OptionParser
 
 
+def log_err(text):
+    """Log a warning to standard error"""
+
+    sys.stderr.write(text)
+    if not text.endswith('n'):
+        sys.stderr.write('\n')
+
+
 class ConfigurationError(Exception):
     """Exception for invalid configuration files."""
     def __init__(self, filename, error):
@@ -123,7 +131,7 @@ class FileState(object):
             else:
                 self.lnkdest = ""
         except (OSError, IOError), e:
-            print >>sys.stderr, "Error: cannot read: %s" % e
+            log_err("Error: cannot read: %s" % e)
             self.force = 1
         else:
             try:
@@ -259,10 +267,10 @@ class FileState(object):
 
         return out
 
-    def unserialize(self, str):
+    def unserialize(self, text):
         # If the following raises ValueError, the parent must! catch it
         (name, mode, user, group, size, mtime, lnkdest, md5sum, shasum) \
-               = str.split('\0')
+               = text.split('\0')
         mode = int(mode)
         size = long(size)
         mtime = int(mtime)
@@ -299,8 +307,7 @@ class SubjectFile(object):
             try:
                 self.virtual = FileState(serialdata=virtualdata)
             except ValueError, e:
-                print >>sys.stderr, ("Unable to serialize the file '%s': %s" %
-                                     (name, e))
+                log_err("Unable to serialize the file '%s': %s" % (name, e))
                 self.force = 1
                 self.virtual = None
             else:
@@ -374,8 +381,7 @@ class FileManager(object):
                                          currvers)
             dbtime = float(self.virtualsdb["bakonf:db_date"])
             if time.time() - dbtime > 8 * 86400:
-                print >>sys.stderr, ("Warning: database is more than"
-                                     " 8 days old!")
+                log_err("Warning: database is more than 8 days old!")
         return
 
     def _findfile(self, name):
@@ -392,7 +398,7 @@ class FileManager(object):
             virtualdata = self.virtualsdb[key]
         else:
             virtualdata = None
-        return SubjectFile(name,virtualdata)
+        return SubjectFile(name, virtualdata)
 
     def _helper(self, arg, dirname, names):
         """Helper for the scandir method.
@@ -410,8 +416,8 @@ class FileManager(object):
                 statres = os.lstat(fullpath)
             except OSError, e:
                 self.errorlist.append((fullpath, e.strerror))
-                print >>sys.stderr, ("Error: cannot stat '%s': '%s'. "
-                                     "Not archived." % (fullpath, e.strerror))
+                log_err("Error: cannot stat '%s': '%s'.Not archived." %
+                        (fullpath, e.strerror))
             else:
                 if not stat.S_ISDIR(statres.st_mode):
                     self._scanfile(fullpath)
@@ -462,7 +468,7 @@ class FileManager(object):
                 self._scanfile(item)
         return
 
-    def addparents(item, list):
+    def addparents(item, item_lst):
         """Smartly insert a filename into a list.
 
         This function extracts the parents of an item and puts them in
@@ -473,11 +479,11 @@ class FileManager(object):
         base = os.path.dirname(item)
         if base == "/":
             return
-        FileManager.addparents(base, list)
-        if not base in list:
-            list.append(base)
-        if not item in list:
-            list.append(item)
+        FileManager.addparents(base, item_lst)
+        if not base in item_lst:
+            item_lst.append(base)
+        if not item in item_lst:
+            item_lst.append(item)
 
     addparents = staticmethod(addparents)
 
@@ -533,8 +539,7 @@ class MetaOutput(object):
                 err = "unknown status code %i" % status
             self.errors = (self.command, err)
             nret = 0
-            print >>sys.stderr, "Warning: '%s' %s." \
-                  % (self.command, err)
+            log_err("Warning: '%s' %s." % (self.command, err))
         fhandle = StringIO.StringIO()
         fhandle.write(output)
         ti = genfakefile(fhandle, name=os.path.join("metadata",
@@ -553,6 +558,10 @@ class BackupManager(object):
     def __init__(self, options):
         """Constructor for BackupManager."""
         self.options = options
+        self.fs_include = []
+        self.fs_exclude = []
+        self.meta_outputs = []
+
         self._parseconf(options.configfile)
 
     def _getdoms(cls, dom):
@@ -570,7 +579,7 @@ class BackupManager(object):
         domlist = [dom]
         cfgs = [glob.glob(incl.getAttribute("path")) for incl in
                 dom.firstChild.getElementsByTagName("include")]
-        paths = reduce(lambda x,y: x+y, cfgs, [])
+        paths = reduce(lambda x, y: x+y, cfgs, [])
         for fname in paths:
             childdom = xml.dom.minidom.parse(fname)
             if childdom.firstChild.tagName != "bakonf":
@@ -583,9 +592,6 @@ class BackupManager(object):
 
     def _parseconf(self, filename):
         """Parse the configuration file."""
-        self.fs_include = []
-        self.fs_exclude = []
-        self.meta_outputs = []
 
         masterdom = xml.dom.minidom.parse(filename)
 
@@ -650,8 +656,8 @@ class BackupManager(object):
                 archive.add(name=path, arcname=arcx, recursive=0)
             except IOError, e:
                 errorlist.append((path, e.strerror))
-                print >>sys.stderr, ("Error: cannot read '%s': '%s'. "
-                                     "Not archived." % (path, e.strerror))
+                log_err("Error: cannot read '%s': '%s'. Not archived." %
+                        (path, e.strerror))
             else: # Successful archiving of the member
                 donelist.append(path)
         if verbose:
@@ -693,18 +699,19 @@ class BackupManager(object):
         the command line and the configuration file.
 
         """
-        final_tar = os.path.join(self.options.destdir, "%s-L%u.tar" %
-                                 (options.archive_id, options.level))
-        if options.compression == 1:
+        opts = self.options
+        final_tar = os.path.join(opts.destdir, "%s-L%u.tar" %
+                                 (opts.archive_id, opts.level))
+        if opts.compression == 1:
             tarmode = "w:gz"
             final_tar += ".gz"
-        elif options.compression == 2:
+        elif opts.compression == 2:
             tarmode = "w:bz2"
             final_tar += ".bz2"
         else:
             tarmode = "w"
-        if options.file is not None:
-            final_tar = os.path.abspath(options.file)
+        if opts.file is not None:
+            final_tar = os.path.abspath(opts.file)
         tarh = tarfile.open(name=final_tar, mode=tarmode)
         tarh.posix = 0 # Need to work around 100 char filename length
 
@@ -714,18 +721,18 @@ class BackupManager(object):
                      % (PKG_VERSION, my_hostname, time.strftime("%F %T%z")))
 
         # Archiving files
-        if options.do_files:
+        if opts.do_files:
             signature += " do_filesystem"
             self._addfilesys(tarh)
 
         # Add metainformations
-        if options.do_metas:
+        if opts.do_metas:
             signature += " do_metainformations"
             self._addmetas(tarh)
 
         signature += "\n"
         # Add readme stuff
-        if options.verbose:
+        if opts.verbose:
             print signature,
         sio = StringIO.StringIO(signature)
         fh = genfakefile(sio, "README")
@@ -734,13 +741,13 @@ class BackupManager(object):
         # Done with the archive
         tarh.close()
 
-        if options.verbose:
+        if opts.verbose:
             statres = os.stat(final_tar)
             print ("Archive generated at '%s', size %i." %
                    (final_tar, statres.st_size))
 
         # Now update the database with the files which have been stored
-        if options.do_files:
+        if opts.do_files:
             for path in self.fs_donelist:
                 self.fs_manager.notifywritten(path)
             # Close the db now
@@ -760,11 +767,12 @@ def genfakefile(sio=None, name = None, user='root', group='root', mtime=None):
     sio.seek(0, 0)
     return ti
 
-if __name__ == "__main__":
+def main():
+    """Main function"""
+
     os.umask(0077)
     my_hostname = os.uname()[1]
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
-    def_file = "%s.tar" % archive_id
     config_file = "/etc/bakonf/bakonf.xml"
     usage = ("usage: %prog [options]\n"
              "\n"
@@ -802,21 +810,24 @@ if __name__ == "__main__":
                   action="store_false", default=1)
     op.add_option("-v", "--verbose", dest="verbose", action="store_true",
                   help="be verbose in operation", default=0)
-    (options, args) = op.parse_args()
+    (options, _) = op.parse_args()
     options.archive_id = archive_id
 
     if not options.do_files and not options.do_metas:
-        print >>sys.stderr, "Error: nothing to backup!"
+        log_err("Error: nothing to backup!")
         sys.exit(1)
 
     if options.level is None:
-        print >>sys.stderr, "You must give the backup level, either 0 or 1."
+        log_err("You must give the backup level, either 0 or 1.")
         sys.exit(1)
 
     if options.level not in (0, 1):
-        print >>sys.stderr, ("Error invalid backup level %u, must be 0 or 1."
-                             % options.level)
+        log_err("Error invalid backup level %u, must be 0 or 1." %
+                options.level)
         sys.exit(1)
 
     bm = BackupManager(options)
     bm.run()
+
+if __name__ == "__main__":
+    main()
