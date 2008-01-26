@@ -22,7 +22,7 @@ dist:
 	make -C doc usermanual.html usermanual.txt bakonf.8
 	mkdir $(DISTDIR)/doc
 	cp -a doc/usermanual.* $(DISTDIR)/doc/
-	cp -a doc/bakonf.8 $(DISTDIR)
+	cp -a doc/bakonf.* $(DISTDIR)
 	mkdir $(DISTDIR)/sources
 	cp -a sources/*.xml $(DISTDIR)/sources
 	cp README COPYING $(DISTDIR)
