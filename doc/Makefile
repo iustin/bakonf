@@ -1,16 +1,18 @@
-all: usermanual.ps html usermanual.txt bakonf.8
+all: usermanual.pdf usermanual.html usermanual.txt bakonf.8
 
-html: usermanual.sgml
-	db2html usermanual.sgml
+usermanual.html: usermanual.sgml
+	db2html -u -o . usermanual.sgml
+	rmdir usermanual || true
 
 man.html:
 	db2html bakonf.sgml
 
 %.8: %.sgml
 	docbook2man $^
+	rm -f manpage.links manpage.refs
 
 %.txt: %.sgml
 	docbook2txt $^
 
-%.ps: %.sgml
-	db2ps $^
+%.pdf: %.sgml
+	db2pdf $^

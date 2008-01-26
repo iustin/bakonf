@@ -1,6 +1,6 @@
 Summary: A configuration file backup tool
 Name: bakonf
-Version: 0.5.1
+Version: 0.5.2
 Release: 1
 License: GPL
 Vendor: Iustin Pop
@@ -43,6 +43,9 @@ rm -rf $RPM_BUILD_ROOT
 /etc/cron.d/bakonf
 
 %changelog
+* Sat Jan 26 2008 Iustin Pop <iusty@k1024.org> 0.5.2-1
+- Fix charset/encoding issues
+
 * Fri Dec 20 2002 Iustin Pop <iusty@k1024.org> 0.5-1
 - Major upgrade; now xml config, no more rpm dependency, new docs
 

@@ -8,64 +8,137 @@
       <email>iusty@k1024.org</email>
     </author>
     <title>bakonf usermanual</title>
-    <abstract><para>This document explains the concept and usage of bakonf 0.5.1, a system tool which backs up the configuration files on a system.</para></abstract>
+
+    <abstract><para>This document explains the concept and usage of
+    bakonf 0.5.2, a system tool which backs up the configuration files
+    on a system.</para></abstract>
     <copyright>
       <year>2002</year>
       <holder>Iustin Pop, &lt;iusty@k1024.org&gt;</holder>
     </copyright>
     <legalnotice>
-      <para>Permission is granted to copy, distribute and/or modify this document under the terms of the GNU Free Documentation License, Version 1.1 or any later version published by the Free Software Foundation; with no Invariant Sections, with no Front-Cover Texts, and with no Back-Cover Texts. A copy of the license is included in the section entitled "GNU Free Documentation License".</para>
-      <para>New versions of this document can be downloaded at the projects's homepage, <ulink url="http://www.nongnu.org/bakonf/">http://www.nongnu.org/bakonf/</ulink></para>
+      <para>Permission is granted to copy, distribute and/or modify
+      this document under the terms of the GNU Free Documentation
+      License, Version 1.1 or any later version published by the Free
+      Software Foundation; with no Invariant Sections, with no
+      Front-Cover Texts, and with no Back-Cover Texts. A copy of the
+      license is included in the section entitled "GNU Free
+      Documentation License".</para>
+
+      <para>New versions of this document can be downloaded at the
+      projects's homepage, <ulink
+      url="http://www.nongnu.org/bakonf/">http://www.nongnu.org/bakonf/</ulink></para>
     </legalnotice>
-    <releaseinfo>$Id: usermanual.sgml,v 1.10 2002/12/20 01:46:47 iusty Exp $</releaseinfo>
   </articleinfo>
   <section id="sect-about">
     <title>About this document</title>
-    <para>This is the usermanual for the bakonf project, version 0.5.1; homepage is at <ulink url="http://www.nongnu.org/bakonf/">http://www.nongnu.org/bakonf/</ulink>. You can also get new versions of this document there.</para>
-    <para>Revision: $Id: usermanual.sgml,v 1.10 2002/12/20 01:46:47 iusty Exp $</para>
+
+    <para>This is the usermanual for the bakonf project, version
+    0.5.2; homepage is at <ulink
+    url="http://www.nongnu.org/bakonf/">http://www.nongnu.org/bakonf/</ulink>. You
+    can also get new versions of this document there.</para>
+
   </section>
   <section id="sect-intro">
     <title>Introduction</title>
-    <para>Making backup is an important aspect of system administration. The techniques of backing up data are explained in any good document about system administration, and they won't be explained here again.</para>
-    <para>However, bakonf comes into play into a particular part of the backups: the backing up of the system's configuration.</para>
-    <para>The basic idea is that on a standard instalation of a Unix-like system you have a lot of data which can be very easily restored from the original media, thus there is no point in archiving it. For example, after a fresh install of a RedHat Linux 8.0, you have &tilde;4.5GB of space used. However, only a <emphasis>very</emphasis> small part of this amount is holding important information, the other part being binaries, libraries and other kind of data which will never modify in normal usage. Only the configuration files are changing (of course, also the user data is changing, but we are talking about an empty system).</para>
-    <para>If we classify the files existing on a Unix system, we have:</para>
+
+    <para>Making backup is an important aspect of system
+    administration. The techniques of backing up data are explained in
+    any good document about system administration, and they won't be
+    explained here again.</para>
+
+    <para>However, bakonf comes into play into a particular part of
+    the backups: the backing up of the system's configuration.</para>
+
+    <para>The basic idea is that on a standard instalation of a
+    Unix-like system you have a lot of data which can be very easily
+    restored from the original media, thus there is no point in
+    archiving it. For example, after a fresh install of a RedHat Linux
+    8.0, you have &tilde;4.5GB of space used. However, only a
+    <emphasis>very</emphasis> small part of this amount is holding
+    important information, the other part being binaries, libraries
+    and other kind of data which will never modify in normal
+    usage. Only the configuration files are changing (of course, also
+    the user data is changing, but we are talking about an empty
+    system).</para>
+
+    <para>If we classify the files existing on a Unix system, we
+    have:</para>
+
     <variablelist>
         <varlistentry>
           <term>configuration data</term>
           <listitem>
-            <para>These are the target of bakonf; they are usually small text files, partly coming from the system installation, maybe edited by the administrator, partly created by him. Size is (on the workstation I write this) &tilde;15MB.</para>
+            <para>These are the target of bakonf; they are usually
+            small text files, partly coming from the system
+            installation, maybe edited by the administrator, partly
+            created by him. Size is (on the workstation I write this)
+            &tilde;15MB.</para>
           </listitem>
         </varlistentry>
         <varlistentry>
           <term>binaries, libraries, other system files</term>
           <listitem>
-            <para>These are mostly read-only; in a package based distribution, they came from the packages and are replaced when the package is upgraded. In classical systems, they come from the install archives. Size is (in our hypothetical rh8.0 full install) &tilde;4.5GB.</para>
+            <para>These are mostly read-only; in a package based
+            distribution, they came from the packages and are replaced
+            when the package is upgraded. In classical systems, they
+            come from the install archives. Size is (in our
+            hypothetical rh8.0 full install) &tilde;4.5GB.</para>
           </listitem>
         </varlistentry>
         <varlistentry>
           <term>user data</term>
           <listitem>
-            <para>These are emails, web pages, documents, etc. - this is important data, and needs to be backed up regularly. They also don't come from the installation media, and are not touched by the system. Size is undetermined, but is guaranteed to be exactly the amount of free space on the system :).</para>
+            <para>These are emails, web pages, documents, etc. - this
+            is important data, and needs to be backed up
+            regularly. They also don't come from the installation
+            media, and are not touched by the system. Size is
+            undetermined, but is guaranteed to be exactly the amount
+            of free space on the system :).</para>
           </listitem>
         </varlistentry>
         <varlistentry>
           <term>system variable data</term>
           <listitem>
-            <para>These are the files created and managed by the system, usually from the configuration files and other external variables. Examples: <filename>/var/lib/logrotate.status</filename>, <filename>/var/lib/slocate/slocate.db</filename>. These are not all critical files, some are needed to be included in a backup only for analysis purposes, others should not be included in backups (e.g. if you reinstall your system or restore from backup, some files will have for sure other contents, generated from the new installation).</para>
+            <para>These are the files created and managed by the
+            system, usually from the configuration files and other
+            external variables. Examples:
+            <filename>/var/lib/logrotate.status</filename>,
+            <filename>/var/lib/slocate/slocate.db</filename>. These
+            are not all critical files, some are needed to be included
+            in a backup only for analysis purposes, others should not
+            be included in backups (e.g. if you reinstall your system
+            or restore from backup, some files will have for sure
+            other contents, generated from the new
+            installation).</para>
           </listitem>
         </varlistentry>
       </variablelist>
-    <para>From all these, only the configuration data and the user data are absolutely required to recreate the system. The binaries can come from the installation source. The system managed data will be recreated by the system. And since the difference in size between the configuration and user data is so great in a typical system, I believe it deserves another backup method (besides the inclusion in standard backup procedures, which are, I repeat, <emphasis>CRITICAL!</emphasis>).</para>
+    <para>From all these, only the configuration data and the user
+    data are absolutely required to recreate the system. The binaries
+    can come from the installation source. The system managed data
+    will be recreated by the system. And since the difference in size
+    between the configuration and user data is so great in a typical
+    system, I believe it deserves another backup method (besides the
+    inclusion in standard backup procedures, which are, I repeat,
+    <emphasis>CRITICAL!</emphasis>).</para>
   </section>
   <section>
     <title>Quick start</title>
     <orderedlist>
       <listitem>
-        <para>run bakonf with <option>-L0</option> to archive all config files and create its database:</para>
+        <para>run bakonf with <option>-L0</option> to archive all
+        config files and create its database:</para>
+
         <screen># bakonf -L0
 #</screen>
-        <para>If everything went well, bakonf has created an archive under <filename class="directory">/var/lib/bakonf/archives</filename> named after your host. Look into that directory to find it. If any errors have occured, bakonf will tell you:</para>
+
+        <para>If everything went well, bakonf has created an archive
+        under <filename
+        class="directory">/var/lib/bakonf/archives</filename> named
+        after your host. Look into that directory to find it. If any
+        errors have occured, bakonf will tell you:</para>
+
         <screen>
 [user@test user]$ bakonf -L0
 Error: cannot read '/nfs/README': 'Permission denied'. Not archived.
@@ -75,7 +148,12 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
 </screen>
       </listitem>
       <listitem>
-        <para>run daily (or more often) bakonf with <option>-L1</option> to archive only the changed files since the previous step. This archive should be much smaller. It will be easy, <emphasis>after encryption</emphasis>, to email it.</para>
+        <para>run daily (or more often) bakonf with
+        <option>-L1</option> to archive only the changed files since
+        the previous step. This archive should be much smaller. It
+        will be easy, <emphasis>after encryption</emphasis>, to email
+        it.</para>
+
         <screen># bakonf -L1
 #</screen>
       </listitem>
@@ -86,8 +164,18 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
   </section>
   <section>
     <title>Details about bakonf</title>
-    <para>bakonf home page is <ulink url="http://www.nongnu.org/bakonf/">http://www.nongnu.org/bakonf/</ulink>. The project is hosted at <ulink url="http://savannah.nongnu.org/projects/bakonf/">http://savannah.nongnu.org/projects/bakonf/</ulink>.</para>
-    <para>You can regard bakonf as a rescue archive creator. It creates an archive of configuration files and metadata information about the system. By metadata, I mean data which is not found anywhere in the filesystem as simple files: partition table layout, hardware configuration, kernel version, etc.</para>
+
+    <para>bakonf home page is <ulink
+    url="http://www.nongnu.org/bakonf/">http://www.nongnu.org/bakonf/</ulink>. The
+    project is hosted at <ulink
+    url="http://savannah.nongnu.org/projects/bakonf/">http://savannah.nongnu.org/projects/bakonf/</ulink>.</para>
+
+    <para>You can regard bakonf as a rescue archive creator. It
+    creates an archive of configuration files and metadata information
+    about the system. By metadata, I mean data which is not found
+    anywhere in the filesystem as simple files: partition table
+    layout, hardware configuration, kernel version, etc.</para>
+
     <table frame="all" colsep="0" rowsep="1">
       <title>Archive layout</title>
       <tgroup cols="3">
@@ -104,17 +192,29 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
         <tbody>
           <row>
             <entry><filename>README</filename></entry>
-            <entry>A file which contains informations about the archive: when it was generated, with wich options and on what host</entry>
+
+            <entry>A file which contains informations about the
+            archive: when it was generated, with wich options and on
+            what host</entry>
+
             <entry>Always</entry>
           </row>
           <row>
             <entry><filename>unarchived_files.lst</filename></entry>
-            <entry>A file which contains details about which files couldn't be backed up; this can happen when bakonf is not run as root, or when it scans NFS directories</entry>
+
+            <entry>A file which contains details about which files
+            couldn't be backed up; this can happen when bakonf is not
+            run as root, or when it scans NFS directories</entry>
+
             <entry>When filesystem backup has been performed</entry>
           </row>
           <row>
             <entry><filename>commands_with_errors.lst</filename></entry>
-            <entry>A file which contains details about which commands have exited with non-zero status. Their output is still stored in the archive, though.</entry>
+
+            <entry>A file which contains details about which commands
+            have exited with non-zero status. Their output is still
+            stored in the archive, though.</entry>
+
             <entry>When metadata backup has been performed</entry>
           </row>
           <row>
@@ -124,7 +224,10 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
           </row>
           <row>
             <entry><filename class="directory">metadata/</filename></entry>
-            <entry>Under this path are stored the files resulted from metadata backup.</entry>
+
+            <entry>Under this path are stored the files resulted from
+            metadata backup.</entry>
+
             <entry>When metadata backup has been performed</entry>
           </row>
         </tbody>
@@ -132,10 +235,15 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
     </table>
     <section>
       <title>Filesystem backup</title>
-      <para>Bakonf can be operated in two modes: <simplelist type="inline">
-          <member>level 0</member>
-          <member>level 1</member>
-        </simplelist>. In level 0, it archives all of the specified configuration files and registers the state of those configuration files in a database (called virtuals database), of type Berkley DB. In level 1, it archives only the files modified since the last level 0 backup; it does this by comparing the virtuals database with the filesystem.
+
+      <para>Bakonf can be operated in two modes: <simplelist
+      type="inline"> <member>level 0</member> <member>level 1</member>
+      </simplelist>. In level 0, it archives all of the specified
+      configuration files and registers the state of those
+      configuration files in a database (called virtuals database), of
+      type Berkley DB. In level 1, it archives only the files modified
+      since the last level 0 backup; it does this by comparing the
+      virtuals database with the filesystem.
       </para>
       <section>
         <title>File types and states</title>
@@ -144,19 +252,37 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
           <varlistentry>
             <term>directories</term>
             <listitem>
-              <para>they won't be archived if they don't contain files to be backed up. On the other hand, for each file to be backed up, bakonf will also backup (non-recursively) its parent directories (except root) so that you have the user, group, mtime and permissions of each directory. For example, if <filename>/usr/local/etc/myconfig</filename> has been selected for archiving, bakonf will actually archive this list of items: <simplelist type="inline">
-                  <member><filename class="directory">/usr</filename></member>
-                  <member><filename class="directory">/usr/local</filename></member>
-                  <member><filename class="directory">/usr/local/etc</filename></member>
-                  <member><filename>/usr/local/etc/myconfig</filename></member>
-                </simplelist>.
+
+              <para>they won't be archived if they don't contain files
+              to be backed up. On the other hand, for each file to be
+              backed up, bakonf will also backup (non-recursively) its
+              parent directories (except root) so that you have the
+              user, group, mtime and permissions of each
+              directory. For example, if
+              <filename>/usr/local/etc/myconfig</filename> has been
+              selected for archiving, bakonf will actually archive
+              this list of items: <simplelist type="inline">
+              <member><filename
+              class="directory">/usr</filename></member>
+              <member><filename
+              class="directory">/usr/local</filename></member>
+              <member><filename
+              class="directory">/usr/local/etc</filename></member>
+              <member><filename>/usr/local/etc/myconfig</filename></member>
+              </simplelist>.
               </para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>regular files</term>
             <listitem>
-              <para>regular files will be archived by bakonf if they aren't excluded by the <literal>noscan</literal> configuration directive. In case this is a partial backup (as opossed to a full backup), bakonf will make the following tests:</para>
+
+              <para>regular files will be archived by bakonf if they
+              aren't excluded by the <literal>noscan</literal>
+              configuration directive. In case this is a partial
+              backup (as opossed to a full backup), bakonf will make
+              the following tests:</para>
+
               <orderedlist>
                 <listitem>
                   <para>size of file saved in database &ne; actual file size? if true, the file will be backed up;</para>
@@ -171,22 +297,32 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
                   <para>file will not be backed up.</para>
                 </listitem>
               </orderedlist>
-              <para>Here we could introduce another form of backup, only file metadata backup, in case file contents hasn't changed, but file mode (permissions, owner) have.</para>
+
+              <para>Here we could introduce another form of backup,
+              only file metadata backup, in case file contents hasn't
+              changed, but file mode (permissions, owner) have.</para>
+
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>symbolic links</term>
             <listitem>
-              <para>bakonf doesn't follow symbolic links ever; it treats a symbolic link like a configuration file (its configration value resided in its name and its target). The tests made by bakonf are, in order:</para>
+              <para>bakonf doesn't follow symbolic links ever; it
+              treats a symbolic link like a configuration file (its
+              configration value resided in its name and its
+              target). The tests made by bakonf are, in order:</para>
               <orderedlist>
                 <listitem>
-                  <para>link target must be equal, or the file is backed up</para>
+                  <para>link target must be equal, or the file is
+                  backed up</para>
                 </listitem>
                 <listitem>
-                  <para>user and group ownership must be equal, or the file is backed up</para>
+                  <para>user and group ownership must be equal, or the
+                  file is backed up</para>
                 </listitem>
                 <listitem>
-                  <para>permission bits must be equal, or the file is backed up</para>
+                  <para>permission bits must be equal, or the file is
+                  backed up</para>
                 </listitem>
                 <listitem>
                   <para>the file is not backed up</para>
@@ -197,13 +333,18 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
           <varlistentry>
             <term>block devices, character devices, fifos, sockets</term>
             <listitem>
-              <para>bakonf always selects these to backed up. Of course, some of them won't be backed up by tar, but regarding bakonf, it will select those for backup.</para>
+              <para>bakonf always selects these to backed up. Of
+              course, some of them won't be backed up by tar, but
+              regarding bakonf, it will select those for
+              backup.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
-            <term>when the file type in archive is different than actual file type</term>
+            <term>when the file type in archive is different than
+            actual file type</term>
             <listitem>
-              <para>in this case, bakonf always selects the file for archiving</para>
+              <para>in this case, bakonf always selects the file for
+              archiving</para>
             </listitem>
           </varlistentry>
         </variablelist>
@@ -211,10 +352,18 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
     </section>
     <section>
       <title>Metadata</title>
-      <para>Metadata allows you to have more information about a system than is available in the filesystem. The current implementation allows you to store output of shell commands. Suggestions about other items are welcome.</para>
+
+      <para>Metadata allows you to have more information about a
+      system than is available in the filesystem. The current
+      implementation allows you to store output of shell
+      commands. Suggestions about other items are welcome.</para>
       <section>
         <title>Partition table</title>
-        <para>The most important metadata item is partition table about your disks, in the eventuality that you have a data error in partition table. The command to back this up varies, for example:</para>
+
+        <para>The most important metadata item is partition table
+        about your disks, in the eventuality that you have a data
+        error in partition table. The command to back this up varies,
+        for example:</para>
         <segmentedlist>
           <segtitle>OS</segtitle>
           <segtitle>Command</segtitle>
@@ -230,7 +379,12 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
       </section>
       <section>
         <title>Device list</title>
-        <para>Having the device list is and their hardware configuration is useful in order to have a quick overview if you want to clone the configuration from one system to another (to see corespondece between config files and hardware config). Examples of scanning the configuration:</para>
+
+        <para>Having the device list is and their hardware
+        configuration is useful in order to have a quick overview if
+        you want to clone the configuration from one system to another
+        (to see corespondece between config files and hardware
+        config). Examples of scanning the configuration:</para>
         <segmentedlist>
           <segtitle>OS</segtitle>
           <segtitle>Command(s)</segtitle>
@@ -249,9 +403,19 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
       <title>What can I use bakonf for?</title>
       <para>At least for:</para>
            <itemizedlist>
-          <listitem><para>Configuration rollback. Since the archives are small, you can keep many versions, but unlike in differential backup, here one archive contains all the needed data.</para></listitem>
-          <listitem><para>Configuration cloning. You can take a bakonf-generated archive from one system to another and 'clone' as much of the settings as you want.</para></listitem>
-          <listitem><para>Quick restore of a server in case of catastrofic harddisk failure. Just reinstall the OS and put the config files back.</para></listitem>
+          <listitem><para>Configuration rollback. Since the archives
+          are small, you can keep many versions, but unlike in
+          differential backup, here one archive contains all the
+          needed data.</para></listitem>
+
+          <listitem><para>Configuration cloning. You can take a
+          bakonf-generated archive from one system to another and
+          'clone' as much of the settings as you
+          want.</para></listitem>
+
+          <listitem><para>Quick restore of a server in case of
+          catastrofic harddisk failure. Just reinstall the OS and put
+          the config files back.</para></listitem>
         </itemizedlist>
     </section>
     <section>
@@ -259,22 +423,17 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
       <para>To use bakonf, you must have the following:</para>
       <itemizedlist>
         <listitem>
-          <para>a Unix-like operating system (with compatible filesystem layout)</para>
+          <para>a Unix-like operating system (with compatible
+          filesystem layout)</para>
         </listitem>
         <listitem>
-          <para><ulink url="http://www.python.org/">python</ulink> version 2.2 or higher</para>
+          <para><ulink url="http://www.python.org/">python</ulink>
+          version 2.4 or higher</para>
         </listitem>
         <listitem>
-          <para><ulink url="http://optik.sourceforge.net/">optik</ulink> - command line parser for python, version 1.3 or higher</para>
-        </listitem>
-        <listitem>
-          <para><ulink url="http://www.gustaebel.de/lars/tarfile/">tarfiel</ulink> - tar module for python (it is expected to be include in python 2.3)</para>
-        </listitem>
-        <listitem>
-          <para><ulink url="http://python-bz2.sf.net/">bz2</ulink> bzip interface module for python, only if you want bzip2-compressed archives</para>
-        </listitem>
-        <listitem>
-          <para>xml parsing support for python, in order to use python's xml.dom.minidom; feel free to hack bakonf to change the configuration system if you want so</para>
+          <para>xml parsing support for python, in order to use
+          python's xml.dom.minidom; feel free to hack bakonf to change
+          the configuration system if you want so</para>
         </listitem>
       </itemizedlist>
     </section>
@@ -283,35 +442,72 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
     <title>Configuration</title>
     <note>
       <title>Note</title>
-      <para>Older bakonf versions (&lt; 0.5) had an entirely different config file. If you upgraded, be sure to forward you changes to the new config files.</para>
+
+      <para>Older bakonf versions (&lt; 0.5) had an entirely different
+      config file. If you upgraded, be sure to forward you changes to
+      the new config files.</para>
+
     </note>
-    <para>bakonf uses a main configuration file <filename>/etc/bakonf/bakonf.xml</filename>, which does some standard settings and tells bakonf what other files to include. These additional files are usually located in <filename class="directory">/etc/bakonf/sources</filename> and tell bakonf how to handle some special cases.</para>
+
+    <para>bakonf uses a main configuration file
+    <filename>/etc/bakonf/bakonf.xml</filename>, which does some
+    standard settings and tells bakonf what other files to
+    include. These additional files are usually located in <filename
+    class="directory">/etc/bakonf/sources</filename> and tell bakonf
+    how to handle some special cases.</para>
+
     <section>
       <title>Configuration language</title>
-      <para>The configuration file is written in XML, and must have the document tag <emphasis>bakonf</emphasis>.</para>
+
+      <para>The configuration file is written in XML, must be encoded
+      in utf-8 and must have the document tag
+      <emphasis>bakonf</emphasis>.</para>
+
       <para>The file can contain the following tags:</para>
+
       <variablelist>
           <varlistentry>
-            <term>&lt;include path="<replaceable>CONFIGFILE_PATTERN</replaceable>"/&gt;</term>
+            <term>&lt;include
+            path="<replaceable>CONFIGFILE_PATTERN</replaceable>"/&gt;</term>
+
             <listitem>
-              <para>tells bakonf to also parse any files which match the given shell pattern. These are files which modify bakonf's own behavior, and are usually located in /etc/bakonf/sources. These are not directories to be backed up! (Altough, if modified, they will be, since are located under /etc usually).</para>
+              <para>tells bakonf to also parse any files which match
+              the given shell pattern. These are files which modify
+              bakonf's own behavior, and are usually located in
+              /etc/bakonf/sources. These are not directories to be
+              backed up! (Altough, if modified, they will be, since
+              are located under /etc usually).</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>&lt;filesystem&gt;</term>
             <listitem>
-              <para>Starts declarations about files to be backed up, and can contain:
+              <para>Starts declarations about files to be backed up,
+              and can contain:
               <variablelist>
                 <varlistentry>
-                  <term>&lt;scan path="<replaceable>SHELL-PATTERN</replaceable>"/&gt;</term>
+                  <term>&lt;scan
+                  path="<replaceable>SHELL-PATTERN</replaceable>"/&gt;</term>
                   <listitem>
-                    <para>tells bakonf to add any file or directory which matched shell pattern <replaceable>PATTERN</replaceable> to its include list. These can be files or directories. Bakonf will descend directories, but will not <emphasis>follow</emphasis> symbolic links! The symlinks are considered configuration items also, so they will be backeup up themselves.</para>
+                    <para>tells bakonf to add any file or directory
+                    which matched shell pattern
+                    <replaceable>PATTERN</replaceable> to its include
+                    list. These can be files or directories. Bakonf
+                    will descend directories, but will not
+                    <emphasis>follow</emphasis> symbolic links! The
+                    symlinks are considered configuration items also,
+                    so they will be backeup up themselves.</para>
                   </listitem>
                 </varlistentry>
                 <varlistentry>
-                  <term>&lt;noscan regex="<replaceable>REGEXP</replaceable>"/&gt;</term>
+                  <term>&lt;noscan
+                  regex="<replaceable>REGEXP</replaceable>"/&gt;</term>
+
                   <listitem>
-                    <para>tells bakonf to ignore any file or directory which matches the regular expression REGEXP from the archive; it won't even open or analise those files.</para>
+                    <para>tells bakonf to ignore any file or directory
+                    which matches the regular expression REGEXP from
+                    the archive; it won't even open or analise those
+                    files.</para>
                   </listitem>
                 </varlistentry>
               </variablelist>
@@ -321,12 +517,28 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
           <varlistentry>
             <term>&lt;metadata&gt;</term>
             <listitem>
-              <para>Starts declarations about metainformations to be included in the archive, and can contain:</para>
+              <para>Starts declarations about metainformations to be
+              included in the archive, and can contain:</para>
               <variablelist>
                 <varlistentry>
-                  <term>&lt;storeoutput command="<replaceable>SHELL-COMMAND</replaceable>" destination="<replaceable>PATH IN ARCHIVE</replaceable>"/&gt;</term>
+                  <term>&lt;storeoutput
+                  command="<replaceable>SHELL-COMMAND</replaceable>"
+                  destination="<replaceable>PATH IN
+                  ARCHIVE</replaceable>"/&gt;</term>
                   <listitem>
-                    <para>Tells bakonf to execute the given <replaceable>SHELL-COMMAND</replaceable> and include its output in a file named <filename>metadata/<replaceable>PATH IN ARCHIVE</replaceable></filename> in the created archive. For example, the element: <programlisting>&lt;storeoutput command="cat /proc/version" destination="proc/version"/&gt;</programlisting> will create a file in the archive with the name <filename>metadata/proc/version</filename> which will contain the <filename>/proc/version</filename> file.</para>
+                    <para>Tells bakonf to execute the given
+                    <replaceable>SHELL-COMMAND</replaceable> and
+                    include its output in a file named
+                    <filename>metadata/<replaceable>PATH IN
+                    ARCHIVE</replaceable></filename> in the created
+                    archive. For example, the element:
+                    <programlisting>&lt;storeoutput command="cat
+                    /proc/version"
+                    destination="proc/version"/&gt;</programlisting>
+                    will create a file in the archive with the name
+                    <filename>metadata/proc/version</filename> which
+                    will contain the
+                    <filename>/proc/version</filename> file.</para>
                   </listitem>
                 </varlistentry>
               </variablelist>
@@ -334,15 +546,29 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
           </varlistentry>
         </variablelist>
       <para>The order of precedence for scan/noscan is:</para>
+
       <itemizedlist>
-          <listitem><para>bakonf will start scanning all items defined with scan</para></listitem>
-          <listitem><para>if at any point in the filesystem scan, the current file/directory mathes any one of noscan REGEXPs, the scan will ignore it. For directories, that means ignoring all the files they contain, so please be careful about it.</para></listitem>
+          <listitem><para>bakonf will start scanning all items defined
+          with scan</para></listitem>
+
+          <listitem><para>if at any point in the filesystem scan, the
+          current file/directory mathes any one of noscan REGEXPs, the
+          scan will ignore it. For directories, that means ignoring
+          all the files they contain, so please be careful about
+          it.</para></listitem>
+
       </itemizedlist>
-      <para>Using these, you can select where you want bakonf to look for files for archiving. The default config file includes <filename>/etc</filename>, <filename>/usr/etc</filename>, <filename>/usr/local/etc</filename> and some others (look in <filename>/etc/bakonf</filename> after installing).</para>
-      <para>Example main configuration file (the file included in the distribution):</para>
+      <para>Using these, you can select where you want bakonf to look
+      for files for archiving. The default config file includes
+      <filename>/etc</filename>, <filename>/usr/etc</filename>,
+      <filename>/usr/local/etc</filename> and some others (look in
+      <filename>/etc/bakonf</filename> after installing).</para>
+
+      <para>Example main configuration file (the file included in the
+      distribution):</para>
       <screen>
 &lt;bakonf&gt;
-&lt;!-- 
+&lt;!--
      Bakonf main configuration file. Tune to your system.
      See also the files in the sources subdirectory (included by default)
 --&gt;
@@ -393,7 +619,8 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
         <varlistentry>
           <term><filename>/etc/bakonf/sources/*.xml</filename></term>
           <listitem>
-            <para>Configuration files for special cases (config files outside of etc dirs).</para>
+            <para>Configuration files for special cases (config files
+            outside of etc dirs).</para>
           </listitem>
         </varlistentry>
         <varlistentry>
@@ -405,18 +632,22 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
         <varlistentry>
           <term><filename>/etc/cron.d/bakonf</filename></term>
           <listitem>
-            <para>Cron file, by default it does not run bakonf, you must uncomment a line to run it.</para>
+            <para>Cron file, by default it does not run bakonf, you
+            must uncomment a line to run it.</para>
           </listitem>
         </varlistentry>
         <varlistentry>
-          <term><filename class="directory">/var/lib/bakonf/archives</filename></term>
+          <term><filename
+          class="directory">/var/lib/bakonf/archives</filename></term>
           <listitem>
-            <para>Default directory for configuration file archives.</para>
+            <para>Default directory for configuration file
+            archives.</para>
           </listitem>
         </varlistentry>
       </variablelist>
       <caution>
-        <para>You must decide yourself what to do with the configuration archives after bakonf creates them!</para>
+        <para>You must decide yourself what to do with the
+        configuration archives after bakonf creates them!</para>
       </caution>
     </section>
   </section>
@@ -424,42 +655,70 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
     <title>Using bakonf</title>
     <section>
       <title>Backup phase</title>
-      <para>For details about the actual parameters to bakonf, see its manpage.</para>
+
+      <para>For details about the actual parameters to bakonf, see its
+      manpage.</para>
+
       <para>To use bakonf, choose to either:
         <itemizedlist>
-          <listitem><para>run it manually, when you want, either always with <option>-L0</option> or with a combination: <simplelist type="inline">
-                <member>weekly with <option>-L0</option></member>
-                <member>daily with <option>-L1</option></member>
+          <listitem><para>run it manually, when you want, either
+          always with <option>-L0</option> or with a combination:
+          <simplelist type="inline"> <member>weekly with
+          <option>-L0</option></member> <member>daily with
+          <option>-L1</option></member>
               </simplelist>
            </para></listitem>
-          <listitem><para>use the provided cron script to run it automatically, or create your own</para></listitem>
+
+          <listitem><para>use the provided cron script to run it
+          automatically, or create your own</para></listitem>
         </itemizedlist>
-</para>
-      <para>In any case, you have to do something with the generated archives. Write the to floppy, tape, CD, other machine, but don't just ignore them, you defeat the purpose of bakonf.</para>
+      </para>
+
+      <para>In any case, you have to do something with the generated
+      archives. Write the to floppy, tape, CD, other machine, but
+      don't just ignore them, you defeat the purpose of bakonf.</para>
     </section>
+
     <section>
       <title>Restore phase</title>
       <section>
         <title>Configuration rollback</title>
-        <para>In this case, just make sure you have the bakonf-generated archive near the date in the past you are interested in. If so:</para>
+
+        <para>In this case, just make sure you have the
+        bakonf-generated archive near the date in the past you are
+        interested in. If so:</para>
         <orderedlist>
           <listitem>
-            <para>if your system uses packages/ports, compare the actual package list with the one recorded by bakonf when it created the archive</para>
+            <para>if your system uses packages/ports, compare the
+            actual package list with the one recorded by bakonf when
+            it created the archive</para>
           </listitem>
           <listitem>
             <para>install/remove software as needed</para>
           </listitem>
           <listitem>
-            <para>copy the configuration files for the services you want to rollback over the current files</para>
+            <para>copy the configuration files for the services you
+            want to rollback over the current files</para>
           </listitem>
         </orderedlist>
       </section>
       <section>
         <title>Complete system restoration</title>
-        <para>If you had a catastrophical failure, you should follow these steps:</para>
+
+        <para>If you had a catastrophical failure, you should follow
+        these steps:</para>
         <orderedlist>
-          <listitem><para>Reinstall the operating system on a clean machine. Use the given information in the <filename>/metadata</filename> directory in the archive to achieve an as close as possible configuration as the old system (e.g. partition layout, packages installed, etc.)</para></listitem>
-          <listitem><para>Copy all the files in the archive in the filesystem, overwriting the defaults from the packages.</para></listitem>
+
+          <listitem><para>Reinstall the operating system on a clean
+          machine. Use the given information in the
+          <filename>/metadata</filename> directory in the archive to
+          achieve an as close as possible configuration as the old
+          system (e.g. partition layout, packages installed,
+          etc.)</para></listitem>
+
+          <listitem><para>Copy all the files in the archive in the
+          filesystem, overwriting the defaults from the
+          packages.</para></listitem>
         </orderedlist>
       </section>
     </section>

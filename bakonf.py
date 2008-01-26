@@ -27,7 +27,7 @@ metadata (like installed packages, etc.)
 
 """
 
-PKG_VERSION = "0.5.1"
+PKG_VERSION = "0.5.2"
 DB_VERSION  = "1"
 
 import sys

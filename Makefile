@@ -1,5 +1,5 @@
 NAME=bakonf
-VERSION=0.5.1
+VERSION=0.5.2
 DISTDIR=$(NAME)-$(VERSION)
 install:
 	install -d -m 0700 $(DESTDIR)/etc/bakonf
@@ -19,21 +19,15 @@ dist:
 	cp bakonf.py $(DISTDIR)/bakonf
 	cp bakonf.xml bakonf.cron $(DISTDIR)
 	cp Makefile bakonf.spec $(DISTDIR)
-	make -C doc html usermanual.txt bakonf.8
+	make -C doc usermanual.html usermanual.txt bakonf.8
 	mkdir $(DISTDIR)/doc
-	cp -a doc/usermanual $(DISTDIR)/doc/usermanual
-	cp -a doc/usermanual.txt $(DISTDIR)/doc
+	cp -a doc/usermanual.* $(DISTDIR)/doc/
 	cp -a doc/bakonf.8 $(DISTDIR)
 	mkdir $(DISTDIR)/sources
 	cp -a sources/*.xml $(DISTDIR)/sources
 	cp README COPYING $(DISTDIR)
-	test -f ChangeLog && cp ChangeLog $(DISTDIR)
 	tar cvzf $(NAME)-$(VERSION).tar.gz $(DISTDIR)
 	rm -rf $(DISTDIR)
 
 rpm:
 	rpmbuild -ta $(NAME)-$(VERSION).tar.gz
-
-changelog:
-	rm ChangeLog || true
-	rcs2log -u 'iusty	Iustin Pop	iusty@k1024.org' > ChangeLog
