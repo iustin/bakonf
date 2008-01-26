@@ -367,22 +367,53 @@ class FileManager(object):
         self.backuplevel = backuplevel
         self.virtualsdb = bsddb.hashopen(virtualsdb, mode)
         if backuplevel == 0:
-            self.virtualsdb["bakonf:db_version"] = DB_VERSION
-            self.virtualsdb["bakonf:db_date"] = str(time.time())
+            self._dbput("bakonf:db_version", DB_VERSION)
+            self._dbput("bakonf:db_date", str(time.time()))
         else:
             for check in ("bakonf:db_version", "bakonf:db_date"):
-                if not self.virtualsdb.has_key(check):
+                if not self._dbhas(check):
                     raise ConfigurationError(virtualsdb,
                                              "Invalid database contents!")
-            currvers = self.virtualsdb["bakonf:db_version"]
+            currvers = self._dbget("bakonf:db_version")
             if currvers != DB_VERSION:
                 raise ConfigurationError(virtualsdb,
                                          "Invalid database version '%s'" %
                                          currvers)
-            dbtime = float(self.virtualsdb["bakonf:db_date"])
+            dbtime = float(self._dbget("bakonf:db_date"))
             if time.time() - dbtime > 8 * 86400:
                 log_err("Warning: database is more than 8 days old!")
         return
+
+    def _dbput(self, key, value):
+        """Add/replace an entry in the virtuals database.
+
+        This is just small wrapper that abstracts this operations, so
+        in case we need to change the implementation there is only one
+        point of change.
+
+        """
+        self.virtualsdb[key] = value
+
+    def _dbget(self, key):
+        """Get and entry from the virtuals database.
+
+        This is just small wrapper that abstracts this operations, so
+        in case we need to change the implementation there is only one
+        point of change.
+
+        """
+        value = self.virtualsdb.get(key, None)
+        return value
+
+    def _dbhas(self, key):
+        """Check if we have an entry in the virtuals database.
+
+        This is just small wrapper that abstracts this operations, so
+        in case we need to change the implementation there is only one
+        point of change.
+
+        """
+        return key in self.virtualsdb
 
     def _findfile(self, name):
         """Locate a file's entry in the virtuals database.
@@ -393,11 +424,8 @@ class FileManager(object):
 
         """
 
-        key = "file:/%s" % str(name)
-        if self.virtualsdb.has_key(key):
-            virtualdata = self.virtualsdb[key]
-        else:
-            virtualdata = None
+        key = "file:/%s" % (name,)
+        virtualdata = self._dbget(key)
         return SubjectFile(name, virtualdata)
 
     def _helper(self, arg, dirname, names):
@@ -499,8 +527,7 @@ class FileManager(object):
         # If a file hasn't been found (as it is with directories), the
         # worst case is that we ignore that we backed up that file.
         if self.backuplevel == 0 and path in self.subjects:
-            self.virtualsdb["file:/%s" % str(path)] = \
-                                       self.subjects[path].serialize()
+            self._dbput("file:/%s" % (path,), self.subjects[path].serialize())
 
     def close(self):
         """Ensure database has been written to disc."""
@@ -653,7 +680,9 @@ class BackupManager(object):
             else:
                 arcx = os.path.join("filesystem", path)
             try:
-                archive.add(name=path, arcname=arcx, recursive=0)
+                archive.add(name=path,
+                            arcname=arcx,
+                            recursive=0)
             except IOError, e:
                 errorlist.append((path, e.strerror))
                 log_err("Error: cannot read '%s': '%s'. Not archived." %
