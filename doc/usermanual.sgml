@@ -475,8 +475,8 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
               the given shell pattern. These are files which modify
               bakonf's own behavior, and are usually located in
               /etc/bakonf/sources. These are not directories to be
-              backed up! (Altough, if modified, they will be, since
-              are located under /etc usually).</para>
+              backed up! (Altough, if modified and included by the
+              filesystem element, they will be).</para>
             </listitem>
           </varlistentry>
           <varlistentry>
@@ -544,6 +544,24 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
               </variablelist>
             </listitem>
           </varlistentry>
+        <varlistentry>
+          <term>&lt;config&gt;</term>
+          <listitem>
+            <para>Configuration section that modifies the behaviour of
+            bakonf. It can contain:</para>
+            <variablelist>
+              <varlistentry>
+                <term>&lt;virtualsdb
+                path="<replaceable>DBNAME</replaceable>"&gt;</term>
+                <listitem>
+                  <simpara>This elements contains in its path
+                  attribute the filename of the virtuals
+                  database.</simpara>
+                </listitem>
+              </varlistentry>
+            </variablelist>
+          </listitem>
+        </varlistentry>
         </variablelist>
       <para>The order of precedence for scan/noscan is:</para>
 
