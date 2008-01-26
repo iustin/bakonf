@@ -50,7 +50,7 @@
     <para>However, bakonf comes into play into a particular part of
     the backups: the backing up of the system's configuration.</para>
 
-    <para>The basic idea is that on a standard instalation of a
+    <para>The basic idea is that on a standard installation of a
     Unix-like system you have a lot of data which can be very easily
     restored from the original media, thus there is no point in
     archiving it. For example, after a fresh install of a RedHat Linux
@@ -137,7 +137,7 @@
         under <filename
         class="directory">/var/lib/bakonf/archives</filename> named
         after your host. Look into that directory to find it. If any
-        errors have occured, bakonf will tell you:</para>
+        errors have occurred, bakonf will tell you:</para>
 
         <screen>
 [user@test user]$ bakonf -L0
@@ -194,7 +194,7 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
             <entry><filename>README</filename></entry>
 
             <entry>A file which contains informations about the
-            archive: when it was generated, with wich options and on
+            archive: when it was generated, with which options and on
             what host</entry>
 
             <entry>Always</entry>
@@ -280,18 +280,22 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
               <para>regular files will be archived by bakonf if they
               aren't excluded by the <literal>noscan</literal>
               configuration directive. In case this is a partial
-              backup (as opossed to a full backup), bakonf will make
+              backup (as opposed to a full backup), bakonf will make
               the following tests:</para>
 
               <orderedlist>
                 <listitem>
-                  <para>size of file saved in database &ne; actual file size? if true, the file will be backed up;</para>
+                  <para>size of file saved in database &ne; actual
+                  file size? if true, the file will be backed
+                  up;</para>
                 </listitem>
                 <listitem>
-                  <para>md5 hash saved &ne; actual md5 hash? if true, file will be backed up;</para>
+                  <para>md5 hash saved &ne; actual md5 hash? if true,
+                  file will be backed up;</para>
                 </listitem>
                 <listitem>
-                  <para>sha hash save &ne; actual sha hash? if true file will be backed up;</para>
+                  <para>sha hash saved &ne; actual sha hash? if true
+                  file will be backed up;</para>
                 </listitem>
                 <listitem>
                   <para>file will not be backed up.</para>
@@ -307,9 +311,9 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
           <varlistentry>
             <term>symbolic links</term>
             <listitem>
-              <para>bakonf doesn't follow symbolic links ever; it
+              <para>bakonf doesn't follow symbolic links; it
               treats a symbolic link like a configuration file (its
-              configration value resided in its name and its
+              configuration data resides in its name and its
               target). The tests made by bakonf are, in order:</para>
               <orderedlist>
                 <listitem>
@@ -383,7 +387,7 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
         <para>Having the device list is and their hardware
         configuration is useful in order to have a quick overview if
         you want to clone the configuration from one system to another
-        (to see corespondece between config files and hardware
+        (to see correspondence between config files and hardware
         config). Examples of scanning the configuration:</para>
         <segmentedlist>
           <segtitle>OS</segtitle>
@@ -414,7 +418,7 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
           want.</para></listitem>
 
           <listitem><para>Quick restore of a server in case of
-          catastrofic harddisk failure. Just reinstall the OS and put
+          catastrophic harddisk failure. Just reinstall the OS and put
           the config files back.</para></listitem>
         </itemizedlist>
     </section>
@@ -473,9 +477,9 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
             <listitem>
               <para>tells bakonf to also parse any files which match
               the given shell pattern. These are files which modify
-              bakonf's own behavior, and are usually located in
+              bakonf's own behaviour, and are usually located in
               /etc/bakonf/sources. These are not directories to be
-              backed up! (Altough, if modified and included by the
+              backed up! (Although, if modified and included by the
               filesystem element, they will be).</para>
             </listitem>
           </varlistentry>
@@ -496,7 +500,7 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
                     will descend directories, but will not
                     <emphasis>follow</emphasis> symbolic links! The
                     symlinks are considered configuration items also,
-                    so they will be backeup up themselves.</para>
+                    so they will be backed up themselves.</para>
                   </listitem>
                 </varlistentry>
                 <varlistentry>
@@ -506,7 +510,7 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
                   <listitem>
                     <para>tells bakonf to ignore any file or directory
                     which matches the regular expression REGEXP from
-                    the archive; it won't even open or analise those
+                    the archive; it won't even open or analyse those
                     files.</para>
                   </listitem>
                 </varlistentry>
@@ -570,7 +574,7 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
           with scan</para></listitem>
 
           <listitem><para>if at any point in the filesystem scan, the
-          current file/directory mathes any one of noscan REGEXPs, the
+          current file/directory matches any one of noscan REGEXPs, the
           scan will ignore it. For directories, that means ignoring
           all the files they contain, so please be careful about
           it.</para></listitem>
@@ -723,7 +727,7 @@ Warning: '/sbin/sfdisk -d /dev/hda' exited with status 1.
       <section>
         <title>Complete system restoration</title>
 
-        <para>If you had a catastrophical failure, you should follow
+        <para>If you had a catastrophic Al failure, you should follow
         these steps:</para>
         <orderedlist>
 
