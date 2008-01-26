@@ -582,6 +582,8 @@ class BackupManager(object):
     meta-informations, etc.
 
     """
+    ENCODING = 'utf-8'
+
     def __init__(self, options):
         """Constructor for BackupManager."""
         self.options = options
@@ -630,7 +632,8 @@ class BackupManager(object):
             for elem in [x for x in config.childNodes if
                          x.nodeType == xml.dom.Node.ELEMENT_NODE]:
                 if elem.tagName == "virtualsdb":
-                    self.fs_virtualsdb = elem.getAttribute("path")
+                    vdb = elem.getAttribute("path")
+                    self.fs_virtualsdb = vdb.encode(self.ENCODING)
 
         doms = BackupManager._getdoms(masterdom)
 
@@ -638,15 +641,21 @@ class BackupManager(object):
             for fses in de.firstChild.getElementsByTagName("filesystem"):
                 for scans in fses.getElementsByTagName("scan"):
                     path = scans.getAttribute("path")
+                    # path is unicode, as returndd by minidom, so we
+                    # convert it to string by encoding into utf-8
+                    path = path.encode(self.ENCODING)
                     self.fs_include += map(os.path.abspath, glob.glob(path))
                 for regexcl in fses.getElementsByTagName("noscan"):
-                    self.fs_exclude.append(regexcl.getAttribute("regex"))
+                    reattr = regexcl.getAttribute("regex")
+                    self.fs_exclude.append(reattr.encode(self.ENCODING))
 
             for metas in de.firstChild.getElementsByTagName("metadata"):
                 for cmdouts in metas.getElementsByTagName("storeoutput"):
-                    self.meta_outputs.append(MetaOutput( \
-                        cmdouts.getAttribute("command"), \
-                        cmdouts.getAttribute("destination")))
+                    meta_cmd = cmdouts.getAttribute("command")
+                    meta_cmd = meta_cmd.encode(self.ENCODING)
+                    meta_dst =  cmdouts.getAttribute("destination")
+                    meta_dst = meta_dst.encode(self.ENCODING)
+                    self.meta_outputs.append(MetaOutput(meta_cmd, meta_dst))
 
             de.unlink()
 
