@@ -100,6 +100,10 @@ class FileState(object):
         if 'filename' not in kwargs and 'serialdata' not in kwargs:
             raise ValueError("Invalid appelation of constructor "
                              "- give either filename or serialdata")
+        self.force = self.virtual = self._md5 = self._sha = \
+                     self.mode = self.size = self.mtime = \
+                     self.lnkdest = self.user = self.group = None
+
         if 'filename' in kwargs:
             # This means a physical file
             self.name = kwargs['filename']
@@ -130,8 +134,8 @@ class FileState(object):
                 self.lnkdest = os.readlink(self.name)
             else:
                 self.lnkdest = ""
-        except (OSError, IOError), e:
-            log_err("Error: cannot read: %s" % e)
+        except (OSError, IOError), err:
+            log_err("Error: cannot read: %s" % str(err))
             self.force = 1
         else:
             try:
@@ -153,11 +157,11 @@ class FileState(object):
                 md5hash = md5.new()
                 shahash = sha.new()
                 fh = file(self.name, "r")
-                r = fh.read(65535)
-                while r != "":
-                    md5hash.update(r)
-                    shahash.update(r)
-                    r = fh.read(65535)
+                data = fh.read(65535)
+                while data:
+                    md5hash.update(data)
+                    shahash.update(data)
+                    data = fh.read(65535)
                 fh.close()
                 self._md5 = md5hash.hexdigest()
                 self._sha = shahash.hexdigest()
@@ -254,6 +258,8 @@ class FileState(object):
     sha = property(fget=getsha, doc="The SHA hash of the file's contents")
 
     def serialize(self):
+        """Encode the file state as a string"""
+
         out = ""
         out += "%s\0" % self.name
         out += "%i\0" % self.mode
@@ -268,6 +274,7 @@ class FileState(object):
         return out
 
     def unserialize(self, text):
+        """Decode the file state from a string"""
         # If the following raises ValueError, the parent must! catch it
         (name, mode, user, group, size, mtime, lnkdest, md5sum, shasum) \
                = text.split('\0')
@@ -290,6 +297,8 @@ class FileState(object):
         self._sha = shasum
 
 class SubjectFile(object):
+    """A file to be backed up"""
+
     __slots__ = ('force', 'name', 'virtual', 'physical')
 
     def __init__(self, name, virtualdata=None):
@@ -306,8 +315,8 @@ class SubjectFile(object):
         if virtualdata is not None:
             try:
                 self.virtual = FileState(serialdata=virtualdata)
-            except ValueError, e:
-                log_err("Unable to serialize the file '%s': %s" % (name, e))
+            except ValueError, err:
+                log_err("Unable to serialize the file '%s': %s" % (name, err))
                 self.force = 1
                 self.virtual = None
             else:
@@ -358,6 +367,9 @@ class FileManager(object):
         virtualsdb = os.path.abspath(virtualsdb)
         self.excludelist.append(re.compile("^%s$" % virtualsdb))
         self.errorlist = []
+        self.filelist = []
+        self.subjects = {}
+        self.scanned = []
         if backuplevel == 0:
             mode = "n"
         elif backuplevel == 1:
@@ -402,7 +414,10 @@ class FileManager(object):
         point of change.
 
         """
-        value = self.virtualsdb.get(key, None)
+        if key in self.virtualsdb:
+            value = self.virtualsdb[key]
+        else:
+            value = None
         return value
 
     def _dbhas(self, key):
@@ -428,7 +443,7 @@ class FileManager(object):
         virtualdata = self._dbget(key)
         return SubjectFile(name, virtualdata)
 
-    def _helper(self, arg, dirname, names):
+    def _helper(self, _, dirname, names):
         """Helper for the scandir method.
 
         This function scans a directory's entries and processes the
@@ -442,10 +457,10 @@ class FileManager(object):
                 continue
             try:
                 statres = os.lstat(fullpath)
-            except OSError, e:
-                self.errorlist.append((fullpath, e.strerror))
+            except OSError, err:
+                self.errorlist.append((fullpath, err.strerror))
                 log_err("Error: cannot stat '%s': '%s'.Not archived." %
-                        (fullpath, e.strerror))
+                        (fullpath, err.strerror))
             else:
                 if not stat.S_ISDIR(statres.st_mode):
                     self._scanfile(fullpath)
@@ -483,9 +498,6 @@ class FileManager(object):
 
     def checksources(self):
         """Examine the list of sources and process them."""
-        self.filelist = []
-        self.subjects = {}
-        self.scanned = []
         for item in self.scanlist:
             if self._isexcluded(item) or item in self.scanned:
                 continue
@@ -590,7 +602,9 @@ class BackupManager(object):
         self.fs_include = []
         self.fs_exclude = []
         self.meta_outputs = []
-
+        self.fs_virtualsdb = None
+        self.fs_donelist = []
+        self.fs_manager = None
         self._parseconf(options.configfile)
 
     def _getdoms(cls, dom):
@@ -684,7 +698,7 @@ class BackupManager(object):
             ntime = time.time()
             print "Done scanning, in %.4f seconds" % (ntime - stime)
             print "Archiving files..."
-        self.fs_donelist = donelist = []
+        donelist = self.fs_donelist
         archive.add(name="/", arcname="filesystem/", recursive=0)
         for path in fs_list:
             if path.startswith("/"):
@@ -695,10 +709,10 @@ class BackupManager(object):
                 archive.add(name=path,
                             arcname=arcx,
                             recursive=0)
-            except IOError, e:
-                errorlist.append((path, e.strerror))
+            except IOError, err:
+                errorlist.append((path, err.strerror))
                 log_err("Error: cannot read '%s': '%s'. Not archived." %
-                        (path, e.strerror))
+                        (path, err.strerror))
             else: # Successful archiving of the member
                 donelist.append(path)
         if verbose:
@@ -760,7 +774,8 @@ class BackupManager(object):
         try:
             tarh = tarfile.open(name=final_tar, mode=tarmode)
         except EnvironmentError, err:
-            raise ConfigurationError(final_tar, "Can't create archive")
+            raise ConfigurationError(final_tar, "Can't create archive: %s" %
+                                     str(err))
 
         tarh.posix = 0 # Need to work around 100 char filename length
 
@@ -881,5 +896,5 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except ConfigurationError, err:
-        print err
+    except ConfigurationError, err2:
+        print err2
