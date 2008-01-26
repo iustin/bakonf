@@ -622,7 +622,10 @@ class BackupManager(object):
     def _parseconf(self, filename):
         """Parse the configuration file."""
 
-        masterdom = xml.dom.minidom.parse(filename)
+        try:
+            masterdom = xml.dom.minidom.parse(filename)
+        except EnvironmentError, err:
+            raise ConfigurationError(filename, str(err))
 
         if masterdom.firstChild.tagName != "bakonf":
             raise ConfigurationError(filename, "XML file root is not bakonf")
@@ -750,7 +753,15 @@ class BackupManager(object):
             tarmode = "w"
         if opts.file is not None:
             final_tar = os.path.abspath(opts.file)
-        tarh = tarfile.open(name=final_tar, mode=tarmode)
+        final_dir = os.path.dirname(final_tar)
+        if not os.path.isdir(final_dir):
+            raise ConfigurationError(final_dir, "Invalid target directory")
+
+        try:
+            tarh = tarfile.open(name=final_tar, mode=tarmode)
+        except EnvironmentError, err:
+            raise ConfigurationError(final_tar, "Can't create archive")
+
         tarh.posix = 0 # Need to work around 100 char filename length
 
         my_hostname = os.uname()[1]
@@ -868,4 +879,7 @@ def main():
     bm.run()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ConfigurationError, err:
+        print err
