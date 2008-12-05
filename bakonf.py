@@ -849,16 +849,16 @@ def main():
                       "; not even for MERCHANTABILITY or FITNESS FOR A "
                       "PARTICULAR PURPOSE." % PKG_VERSION, usage=usage)
     op.add_option("-c", "--config-file", dest="configfile",
-                  help="configuration FILE [%s]" % config_file,
+                  help="configuration file [%s]" % config_file,
                   metavar="FILE", default=config_file)
     op.add_option("-f", "--file", dest="file",
-                  help="name of the ARCHIVE to be generated",
+                  help="name of the archive file to be generated",
                   metavar="ARCHIVE", default=None)
     op.add_option("-d", "--dir", dest="destdir",
-                  help="DIRECTORY where to store the archive",
+                  help="the directory where to store the archive",
                   metavar="DIRECTORY", default="/var/lib/bakonf/archives")
     op.add_option("-L", "--level", dest="level",
-                  help="specify the LEVEL of the backup: 0, 1",
+                  help="specify the level of the backup: 0, 1",
                   metavar="LEVEL", default=0, type="int")
     op.add_option("-g", "--gzip", dest="compression",
                    help="enable compression with gzip",
