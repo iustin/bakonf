@@ -828,7 +828,6 @@ def genfakefile(sio=None, name = None, user='root', group='root', mtime=None):
     ti.uname = user
     ti.gname = group
     ti.mtime = mtime or time.time()
-    ti.chksum = tarfile.calc_chksum(sio.getvalue())
     sio.seek(0, 2)
     ti.size = sio.tell()
     sio.seek(0, 0)
