@@ -644,13 +644,16 @@ class BackupManager(object):
         if masterdom.firstChild.tagName != "bakonf":
             raise ConfigurationError(filename, "XML file root is not bakonf")
 
-        self.fs_virtualsdb = "/etc/bakonf/virtuals.db"
-        for config in masterdom.firstChild.getElementsByTagName("config"):
-            for elem in [x for x in config.childNodes if
-                         x.nodeType == xml.dom.Node.ELEMENT_NODE]:
-                if elem.tagName == "virtualsdb":
-                    vdb = elem.getAttribute("path")
-                    self.fs_virtualsdb = vdb.encode(self.ENCODING)
+        if self.options.virtualsdb is None:
+            self.fs_virtualsdb = "/etc/bakonf/virtuals.db"
+            for config in masterdom.firstChild.getElementsByTagName("config"):
+                for elem in [x for x in config.childNodes if
+                             x.nodeType == xml.dom.Node.ELEMENT_NODE]:
+                    if elem.tagName == "virtualsdb":
+                        vdb = elem.getAttribute("path")
+                        self.fs_virtualsdb = vdb.encode(self.ENCODING)
+        else:
+            self.fs_virtualsdb = self.options.virtualsdb
 
         doms = BackupManager._getdoms(masterdom)
 
@@ -857,6 +860,9 @@ def main():
     op.add_option("-d", "--dir", dest="destdir",
                   help="the directory where to store the archive",
                   metavar="DIRECTORY", default="/var/lib/bakonf/archives")
+    op.add_option("-V", "--virtuals-db", dest="virtualsdb",
+                  help="virtuals database (overrides config file)",
+                  metavar="FILE", default=None)
     op.add_option("-L", "--level", dest="level",
                   help="specify the level of the backup: 0, 1",
                   metavar="LEVEL", default=0, type="int")
