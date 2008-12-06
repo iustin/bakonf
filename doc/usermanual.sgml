@@ -10,7 +10,7 @@
     <title>bakonf usermanual</title>
 
     <abstract><para>This document explains the concept and usage of
-    bakonf 0.5.2, a system tool which backs up the configuration files
+    bakonf 0.5.3, a system tool which backs up the configuration files
     on a system.</para></abstract>
     <copyright>
       <year>2002</year>
@@ -34,7 +34,7 @@
     <title>About this document</title>
 
     <para>This is the usermanual for the bakonf project, version
-    0.5.2; homepage is at <ulink
+    0.5.3; homepage is at <ulink
     url="http://www.nongnu.org/bakonf/">http://www.nongnu.org/bakonf/</ulink>. You
     can also get new versions of this document there.</para>
 

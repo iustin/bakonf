@@ -1,0 +1,5 @@
+Vesion 0.5.3
+------------
+
+Fix compatibility with python 2.5/2.6 - we were (needlessly) using an internal
+function in the tarfile module which changed its return type.

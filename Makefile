@@ -1,5 +1,5 @@
 NAME=bakonf
-VERSION=0.5.2
+VERSION=0.5.3
 DISTDIR=$(NAME)-$(VERSION)
 install:
 	install -d -m 0700 $(DESTDIR)/etc/bakonf

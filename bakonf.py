@@ -27,7 +27,7 @@ included in the generated archive.
 
 """
 
-PKG_VERSION = "0.5.2"
+PKG_VERSION = "0.5.3"
 DB_VERSION  = "1"
 
 import sys
