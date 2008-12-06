@@ -19,11 +19,9 @@
 
 This program backs up the configuration files in a GNU/Linux or other
 Unix-like system. It does this by examining a list of directories for
-files which have been modified since installation (determined, for
-now, only for RPM-based systems) and creates a file list suitable to
-be used with tar or star. Then it proceeds in creating that archive,
-including in it the modified configuration file and some other
-metadata (like installed packages, etc.)
+files which have been modified since the last time it has run and
+creates a tar archive with them. Output of custom commands can also be
+included in the generated archive.
 
 """
 
