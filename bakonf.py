@@ -32,8 +32,6 @@ DB_VERSION  = "1"
 
 import sys
 
-import md5
-import sha
 import stat
 import os
 import pwd
@@ -46,6 +44,13 @@ import xml.dom.minidom
 import commands
 import tarfile
 import bsddb
+
+try:
+    from hashlib import md5 as digest_md5
+    from hashlib import sha1 as digest_sha1
+except ImportError:
+    from md5 import new as digest_md5
+    from sha import new as digest_sha1
 
 from optparse import OptionParser
 
@@ -154,8 +159,8 @@ class FileState(object):
             return
         if not self.force and stat.S_ISREG(self.mode):
             try:
-                md5hash = md5.new()
-                shahash = sha.new()
+                md5hash = digest_md5()
+                shahash = digest_sha1()
                 fh = file(self.name, "r")
                 data = fh.read(65535)
                 while data:
