@@ -131,8 +131,8 @@ class FileState(object):
         try:
             arr = os.lstat(self.name)
             self.mode = arr.st_mode
-            uid = arr.st_uid
-            gid = arr.st_gid
+            self.user = arr.st_uid
+            self.group = arr.st_gid
             self.size = arr.st_size
             self.mtime = arr.st_mtime
             if stat.S_ISLNK(self.mode):
@@ -142,15 +142,6 @@ class FileState(object):
         except (OSError, IOError), err:
             log_err("Error: cannot read: %s" % str(err))
             self.force = 1
-        else:
-            try:
-                self.user = pwd.getpwuid(uid)[0]
-            except KeyError:
-                self.user = uid
-            try:
-                self.group = grp.getgrgid(gid)[0]
-            except KeyError:
-                self.group = gid
 
     def _readhashes(self):
         """Compute the hashes of the file's contents."""

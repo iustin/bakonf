@@ -3,3 +3,6 @@ Vesion 0.5.3
 
 Fix compatibility with python 2.5/2.6 - we were (needlessly) using an internal
 function in the tarfile module which changed its return type.
+
+Also don't store the user and group names in the virtualsdb, but always the
+IDs; this should give a speed-up for certain setups.
