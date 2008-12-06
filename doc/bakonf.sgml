@@ -32,6 +32,7 @@
         <arg choice="opt"><option>--no-metas</option></arg>
       </group>
       <arg choice="req"><option>-L, --level=</option>0|1</arg>
+      <arg choice="opt"><option>-V, --virtuals-db=<replaceable>FILENAME</replaceable></option></arg>
     </cmdsynopsis>
     <cmdsynopsis>
       <command>bakonf</command>
@@ -73,6 +74,14 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term>-V, --virtuals-db=FILE</term>
+        <listitem>
+          <para>This options will override the value for the
+          database. It can be used for quick testing instead of
+          modifying the config file.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term>-g, --gzip</term>
         <listitem>
           <para>compress the generated archive with gzip</para>
@@ -87,7 +96,7 @@
       <varlistentry>
         <term>--no-filesystem</term>
         <listitem>
-          <para>do not save any files in the filesystem. In this case bakonf does not even open a database, bu you must still give the <option>-L</option> option.</para>
+          <para>do not save any files in the filesystem. In this case bakonf does not even open a database, but you must still give the <option>-L</option> option.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
