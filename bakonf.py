@@ -44,7 +44,10 @@ except ImportError:
 import xml.dom.minidom
 import subprocess
 import tarfile
-import bsddb
+try:
+    import bsddb
+except ImportError:
+    import bsddb3 as bsddb
 import logging
 
 try:
