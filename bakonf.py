@@ -139,7 +139,8 @@ class FileState(object):
                 self.lnkdest = os.readlink(self.name)
             else:
                 self.lnkdest = ""
-        except (OSError, IOError), err:
+        except (OSError, IOError):
+            err = sys.exc_info()[1]
             log_err("Error: cannot read: %s" % str(err))
             self.force = 1
 
@@ -311,7 +312,8 @@ class SubjectFile(object):
         if virtualdata is not None:
             try:
                 self.virtual = FileState(serialdata=virtualdata)
-            except ValueError, err:
+            except ValueError:
+                err = sys.exc_info()[1]
                 log_err("Unable to serialize the file '%s': %s" % (name, err))
                 self.force = 1
                 self.virtual = None
@@ -453,7 +455,8 @@ class FileManager(object):
                 continue
             try:
                 statres = os.lstat(fullpath)
-            except OSError, err:
+            except OSError:
+                err = sys.exc_info()[1]
                 self.errorlist.append((fullpath, err.strerror))
                 log_err("Error: cannot stat '%s': '%s'.Not archived." %
                         (fullpath, err.strerror))
@@ -634,7 +637,8 @@ class BackupManager(object):
 
         try:
             masterdom = xml.dom.minidom.parse(filename)
-        except EnvironmentError, err:
+        except EnvironmentError:
+            err = sys.exc_info()[1]
             raise ConfigurationError(filename, str(err))
 
         if masterdom.firstChild.tagName != "bakonf":
@@ -708,7 +712,8 @@ class BackupManager(object):
                 archive.add(name=path,
                             arcname=arcx,
                             recursive=0)
-            except IOError, err:
+            except IOError:
+                err = sys.exc_info()[1]
                 errorlist.append((path, err.strerror))
                 log_err("Error: cannot read '%s': '%s'. Not archived." %
                         (path, err.strerror))
@@ -772,7 +777,8 @@ class BackupManager(object):
 
         try:
             tarh = tarfile.open(name=final_tar, mode=tarmode)
-        except EnvironmentError, err:
+        except EnvironmentError:
+            err = sys.exc_info()[1]
             raise ConfigurationError(final_tar, "Can't create archive: %s" %
                                      str(err))
 
@@ -897,5 +903,6 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except ConfigurationError, err2:
+    except ConfigurationError:
+        err2 = sys.exc_info()[1]
         print err2
