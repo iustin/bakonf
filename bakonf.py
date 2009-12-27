@@ -34,8 +34,6 @@ import sys
 
 import stat
 import os
-import pwd
-import grp
 import glob
 import re
 import time
