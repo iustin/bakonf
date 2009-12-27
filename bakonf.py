@@ -59,6 +59,9 @@ except ImportError:
 
 from optparse import OptionParser
 
+if not hasattr(__builtins__, "reduce"):
+    from functools import reduce
+
 
 class ConfigurationError(Exception):
     """Exception for invalid configuration files."""
