@@ -823,7 +823,7 @@ def genfakefile(sio=None, name = None, user='root', group='root', mtime=None):
 def main():
     """Main function"""
 
-    os.umask(0077)
+    os.umask(63) # 0077 octal, but we write it in decimal due to py3k
     my_hostname = os.uname()[1]
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
     config_file = "/etc/bakonf/bakonf.xml"
