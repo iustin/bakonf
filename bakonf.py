@@ -44,6 +44,7 @@ import xml.dom.minidom
 import commands
 import tarfile
 import bsddb
+import logging
 
 try:
     from hashlib import md5 as digest_md5
@@ -53,14 +54,6 @@ except ImportError:
     from sha import new as digest_sha1
 
 from optparse import OptionParser
-
-
-def log_err(text):
-    """Log a warning to standard error"""
-
-    sys.stderr.write(text)
-    if not text.endswith('n'):
-        sys.stderr.write('\n')
 
 
 class ConfigurationError(Exception):
@@ -141,7 +134,7 @@ class FileState(object):
                 self.lnkdest = ""
         except (OSError, IOError):
             err = sys.exc_info()[1]
-            log_err("Error: cannot read: %s" % str(err))
+            logging.error("Cannot read: %s", err)
             self.force = 1
 
     def _readhashes(self):
@@ -314,7 +307,8 @@ class SubjectFile(object):
                 self.virtual = FileState(serialdata=virtualdata)
             except ValueError:
                 err = sys.exc_info()[1]
-                log_err("Unable to serialize the file '%s': %s" % (name, err))
+                logging.error("Unable to serialize the file '%s': %s",
+                              name, err)
                 self.force = 1
                 self.virtual = None
             else:
@@ -391,7 +385,7 @@ class FileManager(object):
                                          currvers)
             dbtime = float(self._dbget("bakonf:db_date"))
             if time.time() - dbtime > 8 * 86400:
-                log_err("Warning: database is more than 8 days old!")
+                logging.warning("Database is more than 8 days old!")
         return
 
     def _dbput(self, key, value):
@@ -458,8 +452,8 @@ class FileManager(object):
             except OSError:
                 err = sys.exc_info()[1]
                 self.errorlist.append((fullpath, err.strerror))
-                log_err("Error: cannot stat '%s': '%s'.Not archived." %
-                        (fullpath, err.strerror))
+                logging.error("Cannot stat '%s': '%s'.Not archived.",
+                              fullpath, err.strerror)
             else:
                 if not stat.S_ISDIR(statres.st_mode):
                     self._scanfile(fullpath)
@@ -577,7 +571,7 @@ class MetaOutput(object):
                 err = "unknown status code %i" % status
             self.errors = (self.command, err)
             nret = 0
-            log_err("Warning: '%s' %s." % (self.command, err))
+            logging.warning("'%s' %s.", self.command, err)
         fhandle = StringIO.StringIO()
         fhandle.write(output)
         ti = genfakefile(fhandle, name=os.path.join("metadata",
@@ -687,20 +681,17 @@ class BackupManager(object):
         /unarchived_files.lst.
 
         """
-        verbose = self.options.verbose
-        if verbose:
-            stime = time.time()
-            print "Scanning files..."
+        stime = time.time()
+        logging.info("Scanning files...")
         self.fs_manager = fm = FileManager(self.fs_include, self.fs_exclude,
                                            self.fs_virtualsdb,
                                            self.options.level)
         fm.checksources()
         errorlist = list(fm.errorlist)
         fs_list = fm.filelist
-        if verbose:
-            ntime = time.time()
-            print "Done scanning, in %.4f seconds" % (ntime - stime)
-            print "Archiving files..."
+        ntime = time.time()
+        logging.info("Done scanning, in %.4f seconds", ntime - stime)
+        logging.info("Archiving files...")
         donelist = self.fs_donelist
         archive.add(name="/", arcname="filesystem/", recursive=0)
         for path in fs_list:
@@ -715,13 +706,12 @@ class BackupManager(object):
             except IOError:
                 err = sys.exc_info()[1]
                 errorlist.append((path, err.strerror))
-                log_err("Error: cannot read '%s': '%s'. Not archived." %
-                        (path, err.strerror))
+                logging.error("Cannot read '%s': '%s'. Not archived.",
+                              path, err.strerror)
             else: # Successful archiving of the member
                 donelist.append(path)
-        if verbose:
-            ptime = time.time()
-            print "Done archiving files, in %.4f seconds." % (ptime - ntime)
+        ptime = time.time()
+        logging.info("Done archiving files, in %.4f seconds.", ptime - ntime)
 
         sio = StringIO.StringIO()
         for (filename, error) in errorlist:
@@ -799,10 +789,8 @@ class BackupManager(object):
             signature += " do_metainformations"
             self._addmetas(tarh)
 
-        signature += "\n"
         # Add readme stuff
-        if opts.verbose:
-            print signature,
+        logging.info(signature)
         sio = StringIO.StringIO(signature)
         fh = genfakefile(sio, "README")
         tarh.addfile(fh, sio)
@@ -810,10 +798,9 @@ class BackupManager(object):
         # Done with the archive
         tarh.close()
 
-        if opts.verbose:
-            statres = os.stat(final_tar)
-            print ("Archive generated at '%s', size %i." %
-                   (final_tar, statres.st_size))
+        statres = os.stat(final_tar)
+        logging.info("Archive generated at '%s', size %i.",
+                     final_tar, statres.st_size)
 
         # Now update the database with the files which have been stored
         if opts.do_files:
@@ -883,18 +870,23 @@ def main():
                   help="be verbose in operation", default=0)
     (options, _) = op.parse_args()
     options.archive_id = archive_id
+    if options.verbose:
+        lvl = logging.INFO
+    else:
+        lvl = logging.WARNING
+    logging.basicConfig(level=lvl, format="%(levelname)s: %(message)s")
 
     if not options.do_files and not options.do_metas:
-        log_err("Error: nothing to backup!")
+        logging.error("Nothing to backup!")
         sys.exit(1)
 
     if options.level is None:
-        log_err("You must give the backup level, either 0 or 1.")
+        logging.error("You must give the backup level, either 0 or 1.")
         sys.exit(1)
 
     if options.level not in (0, 1):
-        log_err("Error invalid backup level %u, must be 0 or 1." %
-                options.level)
+        logging.error("Invalid backup level %u, must be 0 or 1.",
+                      options.level)
         sys.exit(1)
 
     bm = BackupManager(options)
@@ -905,4 +897,4 @@ if __name__ == "__main__":
         main()
     except ConfigurationError:
         err2 = sys.exc_info()[1]
-        print err2
+        logging.error(str(err2))
