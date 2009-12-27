@@ -37,7 +37,10 @@ import os
 import glob
 import re
 import time
-import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import BytesIO as StringIO
 import xml.dom.minidom
 import commands
 import tarfile
@@ -570,7 +573,7 @@ class MetaOutput(object):
             self.errors = (self.command, err)
             nret = 0
             logging.warning("'%s' %s.", self.command, err)
-        fhandle = StringIO.StringIO()
+        fhandle = StringIO()
         fhandle.write(output)
         ti = genfakefile(fhandle, name=os.path.join("metadata",
                                                     self.destination))
@@ -711,7 +714,7 @@ class BackupManager(object):
         ptime = time.time()
         logging.info("Done archiving files, in %.4f seconds.", ptime - ntime)
 
-        sio = StringIO.StringIO()
+        sio = StringIO()
         for (filename, error) in errorlist:
             sio.write("'%s'\t'%s'\n" % (filename, error))
         fh = genfakefile(sio, name="unarchived_files.lst")
@@ -732,7 +735,7 @@ class BackupManager(object):
             if not meta.store(archive):
                 errorlist.append(meta.errors)
 
-        sio = StringIO.StringIO()
+        sio = StringIO()
         for (cmd, error) in errorlist:
             sio.write("'%s'\t'%s'\n" % (cmd, error))
         fh = genfakefile(sio, name="commands_with_errors.lst")
@@ -789,7 +792,7 @@ class BackupManager(object):
 
         # Add readme stuff
         logging.info(signature)
-        sio = StringIO.StringIO(signature)
+        sio = StringIO(signature)
         fh = genfakefile(sio, "README")
         tarh.addfile(fh, sio)
 
