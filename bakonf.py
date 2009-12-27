@@ -42,7 +42,7 @@ try:
 except ImportError:
     from io import BytesIO as StringIO
 import xml.dom.minidom
-import commands
+import subprocess
 import tarfile
 import bsddb
 import logging
@@ -560,7 +560,14 @@ class MetaOutput(object):
     def store(self, archive):
         """Store the output of my command in the archive."""
         nret = 1
-        (status, output) = commands.getstatusoutput(self.command)
+        child = subprocess.Popen(self.command, shell=True,
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 cwd="/")
+        child.stdin.close()
+        output = child.stdout.read()
+        status = child.wait()
         if not os.WIFEXITED(status) or not os.WEXITSTATUS(status) == 0:
             if os.WIFEXITED(status):
                 err = "exited with status %i" % os.WEXITSTATUS(status)
