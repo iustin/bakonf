@@ -362,7 +362,7 @@ class FileManager(object):
     def __init__(self, scanlist, excludelist, virtualsdb, backuplevel):
         """Constructor for class FileManager."""
         self.scanlist = scanlist
-        self.excludelist = map(re.compile, excludelist)
+        self.excludelist = list(map(re.compile, excludelist))
         virtualsdb = os.path.abspath(virtualsdb)
         self.excludelist.append(re.compile("^%s$" % virtualsdb))
         self.errorlist = []
@@ -672,7 +672,8 @@ class BackupManager(object):
                     # path is unicode, as returndd by minidom, so we
                     # convert it to string by encoding into utf-8
                     path = path.encode(self.ENCODING)
-                    self.fs_include += map(os.path.abspath, glob.glob(path))
+                    self.fs_include += list(map(os.path.abspath,
+                                                glob.glob(path)))
                 for regexcl in fses.getElementsByTagName("noscan"):
                     reattr = regexcl.getAttribute("regex")
                     self.fs_exclude.append(reattr.encode(self.ENCODING))
