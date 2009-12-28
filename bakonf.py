@@ -63,6 +63,12 @@ except ImportError:
 if not hasattr(__builtins__, "reduce"):
     from functools import reduce
 
+if sys.hexversion >= 0x03000000:
+    PY3K = True
+    long = int
+else:
+    PY3K = False
+
 
 class ConfigurationError(Exception):
     """Exception for invalid configuration files."""
@@ -154,7 +160,7 @@ class FileState(object):
             try:
                 md5hash = digest_md5()
                 shahash = digest_sha1()
-                fh = file(self.name, "r")
+                fh = open(self.name, "r")
                 data = fh.read(65535)
                 while data:
                     md5hash.update(data)
