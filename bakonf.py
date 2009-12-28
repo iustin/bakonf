@@ -31,24 +31,27 @@ PKG_VERSION = "0.5.3"
 DB_VERSION  = "1"
 
 import sys
-
 import stat
 import os
 import glob
 import re
 import time
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import BytesIO as StringIO
 import xml.dom.minidom
 import subprocess
 import tarfile
+import logging
+from optparse import OptionParser
+
+# Py 2/3 issues
+try:
+    from StringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 try:
     import bsddb
 except ImportError:
     import bsddb3 as bsddb
-import logging
 
 try:
     from hashlib import md5 as digest_md5
@@ -56,8 +59,6 @@ try:
 except ImportError:
     from md5 import new as digest_md5
     from sha import new as digest_sha1
-
-from optparse import OptionParser
 
 if not hasattr(__builtins__, "reduce"):
     from functools import reduce
@@ -592,7 +593,7 @@ class MetaOutput(object):
             self.errors = (self.command, err)
             nret = 0
             logging.warning("'%s' %s.", self.command, err)
-        fhandle = StringIO()
+        fhandle = BytesIO()
         fhandle.write(output)
         ti = genfakefile(fhandle, name=os.path.join("metadata",
                                                     self.destination))
@@ -734,7 +735,7 @@ class BackupManager(object):
         ptime = time.time()
         logging.info("Done archiving files, in %.4f seconds.", ptime - ntime)
 
-        sio = StringIO()
+        sio = BytesIO()
         for (filename, error) in errorlist:
             sio.write("'%s'\t'%s'\n" % (filename, error))
         fh = genfakefile(sio, name="unarchived_files.lst")
@@ -755,7 +756,7 @@ class BackupManager(object):
             if not meta.store(archive):
                 errorlist.append(meta.errors)
 
-        sio = StringIO()
+        sio = BytesIO()
         for (cmd, error) in errorlist:
             sio.write("'%s'\t'%s'\n" % (cmd, error))
         fh = genfakefile(sio, name="commands_with_errors.lst")
@@ -816,7 +817,7 @@ class BackupManager(object):
 
         # Add readme stuff
         logging.info(signature)
-        sio = StringIO(signature)
+        sio = BytesIO(signature)
         fh = genfakefile(sio, "README")
         tarh.addfile(fh, sio)
 
@@ -836,7 +837,7 @@ class BackupManager(object):
 
 
 def genfakefile(sio=None, name = None, user='root', group='root', mtime=None):
-    """Generate a fake TarInfo object from a StringIO object."""
+    """Generate a fake TarInfo object from a BytesIO object."""
     ti = tarfile.TarInfo()
     ti.name = name
     ti.uname = user
