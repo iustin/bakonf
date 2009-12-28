@@ -442,7 +442,15 @@ class FileManager(object):
         virtualdata = self._dbget(key)
         return SubjectFile(name, virtualdata)
 
-    def _helper(self, _, dirname, names):
+    def _ehandler(self, err):
+        """Error handler for directory walk.
+
+        """
+        self.errorlist.append((err.filename, err.strerror))
+        logging.error("Not archiving '%s', cannot stat: '%s'.",
+                      err.filename, err.strerror)
+
+    def _helper(self, dirname, names):
         """Helper for the scandir method.
 
         This function scans a directory's entries and processes the
@@ -458,9 +466,7 @@ class FileManager(object):
                 statres = os.lstat(fullpath)
             except OSError:
                 err = sys.exc_info()[1]
-                self.errorlist.append((fullpath, err.strerror))
-                logging.error("Cannot stat '%s': '%s'.Not archived.",
-                              fullpath, err.strerror)
+                self._ehandler(err)
             else:
                 if not stat.S_ISDIR(statres.st_mode):
                     self._scanfile(fullpath)
@@ -473,8 +479,8 @@ class FileManager(object):
         path - the directory which should be recusrively descended.
 
         """
-        os.path.walk(path, self._helper, None)
-        return
+        for dpath, dnames, fnames in os.walk(path, onerror=self._ehandler):
+            self._helper(dpath, dnames + fnames)
 
     def _scanfile(self, path):
         """Examine a file for inclusion in the backup."""
