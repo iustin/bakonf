@@ -29,6 +29,7 @@ included in the generated archive.
 
 PKG_VERSION = "0.5.3"
 DB_VERSION  = "1"
+ENCODING = "utf-8"
 
 import sys
 import stat
@@ -160,7 +161,7 @@ class FileState(object):
             try:
                 md5hash = digest_md5()
                 shahash = digest_sha1()
-                fh = open(self.name, "r")
+                fh = open(self.name, "rb")
                 data = fh.read(65535)
                 while data:
                     md5hash.update(data)
@@ -410,7 +411,8 @@ class FileManager(object):
         point of change.
 
         """
-        self.virtualsdb[key] = value
+        key = key.encode(ENCODING)
+        self.virtualsdb[key] = value.encode(ENCODING)
 
     def _dbget(self, key):
         """Get and entry from the virtuals database.
@@ -420,8 +422,9 @@ class FileManager(object):
         point of change.
 
         """
+        key = key.encode(ENCODING)
         if key in self.virtualsdb:
-            value = self.virtualsdb[key]
+            value = self.virtualsdb[key].decode(ENCODING)
         else:
             value = None
         return value
@@ -434,6 +437,7 @@ class FileManager(object):
         point of change.
 
         """
+        key = key.encode(ENCODING)
         return key in self.virtualsdb
 
     def _findfile(self, name):
@@ -614,8 +618,6 @@ class BackupManager(object):
     meta-informations, etc.
 
     """
-    ENCODING = 'utf-8'
-
     def __init__(self, options):
         """Constructor for BackupManager."""
         self.options = options
@@ -671,8 +673,7 @@ class BackupManager(object):
                 for elem in [x for x in config.childNodes if
                              x.nodeType == xml.dom.Node.ELEMENT_NODE]:
                     if elem.tagName == "virtualsdb":
-                        vdb = elem.getAttribute("path")
-                        self.fs_virtualsdb = vdb.encode(self.ENCODING)
+                        self.fs_virtualsdb = elem.getAttribute("path")
         else:
             self.fs_virtualsdb = self.options.virtualsdb
 
@@ -682,21 +683,16 @@ class BackupManager(object):
             for fses in de.firstChild.getElementsByTagName("filesystem"):
                 for scans in fses.getElementsByTagName("scan"):
                     path = scans.getAttribute("path")
-                    # path is unicode, as returndd by minidom, so we
-                    # convert it to string by encoding into utf-8
-                    path = path.encode(self.ENCODING)
                     self.fs_include += list(map(os.path.abspath,
                                                 glob.glob(path)))
                 for regexcl in fses.getElementsByTagName("noscan"):
                     reattr = regexcl.getAttribute("regex")
-                    self.fs_exclude.append(reattr.encode(self.ENCODING))
+                    self.fs_exclude.append(reattr)
 
             for metas in de.firstChild.getElementsByTagName("metadata"):
                 for cmdouts in metas.getElementsByTagName("storeoutput"):
                     meta_cmd = cmdouts.getAttribute("command")
-                    meta_cmd = meta_cmd.encode(self.ENCODING)
-                    meta_dst =  cmdouts.getAttribute("destination")
-                    meta_dst = meta_dst.encode(self.ENCODING)
+                    meta_dst = cmdouts.getAttribute("destination")
                     self.meta_outputs.append(MetaOutput(meta_cmd, meta_dst))
 
             de.unlink()
@@ -728,6 +724,8 @@ class BackupManager(object):
             else:
                 arcx = os.path.join("filesystem", path)
             try:
+                if not hasattr(archive, "encoding"): # older tarfile
+                    arcx = arcx.encode(ENCODING)
                 archive.add(name=path,
                             arcname=arcx,
                             recursive=0)
@@ -743,7 +741,8 @@ class BackupManager(object):
 
         sio = BytesIO()
         for (filename, error) in errorlist:
-            sio.write("'%s'\t'%s'\n" % (filename, error))
+            msg = "'%s'\t'%s'\n" % (filename, error)
+            sio.write(msg.encode(ENCODING))
         fh = genfakefile(sio, name="unarchived_files.lst")
         archive.addfile(fh, sio)
 
@@ -764,7 +763,8 @@ class BackupManager(object):
 
         sio = BytesIO()
         for (cmd, error) in errorlist:
-            sio.write("'%s'\t'%s'\n" % (cmd, error))
+            msg = "'%s'\t'%s'\n" % (cmd, error)
+            sio.write(msg.encode(ENCODING))
         fh = genfakefile(sio, name="commands_with_errors.lst")
         archive.addfile(fh, sio)
 
@@ -823,7 +823,7 @@ class BackupManager(object):
 
         # Add readme stuff
         logging.info(signature)
-        sio = BytesIO(signature)
+        sio = BytesIO(signature.encode(ENCODING))
         fh = genfakefile(sio, "README")
         tarh.addfile(fh, sio)
 
