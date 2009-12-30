@@ -591,15 +591,11 @@ class MetaOutput(object):
         child.stdin.close()
         output = child.stdout.read()
         status = child.wait()
-        if not os.WIFEXITED(status) or not os.WEXITSTATUS(status) == 0:
-            if os.WIFEXITED(status):
-                err = "exited with status %i" % os.WEXITSTATUS(status)
-            elif os.WIFSIGNALED(status):
-                err = "was killed with signal %i" % os.WTERMSIG(status)
-            elif os.WIFSTOPPED(status):
-                err = "was stopped with signal %i" % os.WSTOPSIG(status)
-            else:
-                err = "unknown status code %i" % status
+        if status != 0:
+            if status > 0:
+                err = "exited with status %i" % status
+            elif status < 0:
+                err = "was killed with signal %i" % (-status, )
             self.errors = (self.command, err)
             nret = 0
             logging.warning("'%s' %s.", self.command, err)
