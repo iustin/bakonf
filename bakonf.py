@@ -495,15 +495,20 @@ class FileManager(object):
 
     def _scanfile(self, path):
         """Examine a file for inclusion in the backup."""
-        if self._isexcluded(path) or path in self.scanned:
+        if path in self.scanned:
             return []
+        if self._isexcluded(path):
+            logging.debug("Skipping excluded path %s", path)
         self.scanned.append(path)
+        logging.debug("Examining path %s", path)
         sf = self._findfile(path)
         if sf.needsbackup():
+            logging.debug("Selecting path %s", path)
             self.subjects[sf.name] = sf
             FileManager.addparents(path, self.filelist)
             return [sf.name]
         else:
+            logging.debug("No backup needed for %s", path)
             return []
 
     def _isexcluded(self, path):
@@ -894,14 +899,16 @@ def main():
     op.add_option("", "--no-metas", dest="do_metas",
                   help="don't backup meta-informations",
                   action="store_false", default=1)
-    op.add_option("-v", "--verbose", dest="verbose", action="store_true",
+    op.add_option("-v", "--verbose", dest="verbose", action="count",
                   help="be verbose in operation", default=0)
     (options, _) = op.parse_args()
     options.archive_id = archive_id
-    if options.verbose:
-        lvl = logging.INFO
-    else:
+    if options.verbose > 1:
+        lvl = logging.DEBUG
+    elif options.verbose > 0:
         lvl = logging.WARNING
+    else:
+        lvl = logging.INFO
     logging.basicConfig(level=lvl, format="%(levelname)s: %(message)s")
 
     if not options.do_files and not options.do_metas:
