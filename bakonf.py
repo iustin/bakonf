@@ -31,13 +31,14 @@ PKG_VERSION = "0.5.3"
 DB_VERSION  = "1"
 ENCODING = "utf-8"
 
+DEFAULT_VPATH = "/etc/bakonf/virtuals.db"
+
 import sys
 import stat
 import os
 import glob
 import re
 import time
-import xml.dom.minidom
 import subprocess
 import tarfile
 import logging
@@ -55,20 +56,32 @@ except ImportError:
     import bsddb3 as bsddb
 
 try:
+    from xml.etree.ElementTree import ElementTree
+except ImportError:
+    from elementtree.ElementTree import ElementTree
+
+try:
     from hashlib import md5 as digest_md5
     from hashlib import sha1 as digest_sha1
 except ImportError:
     from md5 import new as digest_md5
     from sha import new as digest_sha1
 
-if not hasattr(__builtins__, "reduce"):
-    from functools import reduce
-
 if sys.hexversion >= 0x03000000:
     PY3K = True
     long = int
+    BTYPE = bytes
 else:
     PY3K = False
+    BTYPE = str
+
+
+def EnsureText(val):
+    """Ensure a string/bytes/unicode object is a 'text' object."""
+    if isinstance(val, BTYPE):
+        # this is an encoded (bytes) value, need to decode
+        val = val.decode(ENCODING)
+    return val
 
 
 class ConfigurationError(Exception):
@@ -628,75 +641,80 @@ class BackupManager(object):
         self.fs_virtualsdb = None
         self.fs_donelist = []
         self.fs_manager = None
+        self._cur_cfgfile = None
         self._parseconf(options.configfile)
 
-    def _getdoms(cls, dom):
+    def _CheckVal(self, val, msg):
+        """Checks that a given value is well-formed.
+
+        Right now this is just not empty (None).
+
+        """
+        if val is None:
+            raise ConfigurationError(self._cur_cfgfile, "%s: %r" % (msg, val))
+
+    def _get_extra_sources(self, mainfile, main_tree):
         """Helper for the _parseconf.
 
         This function scans the given DOM for top-level elements with
-        tagName equal to 'include' and adds to the to-be-parsed list
-        the files matching shell-patern of the path attribute.
+        tagName equal to 'include' and returns the element trees for
+        the files matching shell-patern of the path attribute
+        (including the top etree).
 
         """
-        if dom.firstChild.tagName != "bakonf":
-            dom.unlink()
-            return []
-
-        domlist = [dom]
-        cfgs = [glob.glob(incl.getAttribute("path")) for incl in
-                dom.firstChild.getElementsByTagName("include")]
-        paths = reduce(lambda x, y: x+y, cfgs, [])
-        for fname in paths:
-            childdom = xml.dom.minidom.parse(fname)
-            if childdom.firstChild.tagName != "bakonf":
-                childdom.unlink()
-                continue
-            domlist.append(childdom)
-        return domlist
-
-    _getdoms = classmethod(_getdoms)
+        elist = [(mainfile, main_tree)]
+        for incl in main_tree.findall("/include"):
+            self._CheckVal(incl.text, "Invalid include directive")
+            for fname in glob.glob(incl.text):
+                ctree = ElementTree(file=fname)
+                if ctree.getroot().tag != "bakonf":
+                    continue
+                elist.append((fname, ctree))
+        return elist
 
     def _parseconf(self, filename):
         """Parse the configuration file."""
 
         try:
-            masterdom = xml.dom.minidom.parse(filename)
-        except EnvironmentError:
+            etree = ElementTree(file=filename)
+        except Exception:
             err = sys.exc_info()[1]
             raise ConfigurationError(filename, str(err))
 
-        if masterdom.firstChild.tagName != "bakonf":
+        if etree.getroot().tag != "bakonf":
             raise ConfigurationError(filename, "XML file root is not bakonf")
-
+        self._cur_cfgfile = filename
         if self.options.virtualsdb is None:
-            self.fs_virtualsdb = "/etc/bakonf/virtuals.db"
-            for config in masterdom.firstChild.getElementsByTagName("config"):
-                for elem in [x for x in config.childNodes if
-                             x.nodeType == xml.dom.Node.ELEMENT_NODE]:
-                    if elem.tagName == "virtualsdb":
-                        self.fs_virtualsdb = elem.getAttribute("path")
+            vpath = etree.find("/config/virtualsdb")
+            if vpath is None:
+                self.fs_virtualsdb = DEFAULT_VPATH
+            else:
+                self.fs_virtualsdb = vpath.text
         else:
             self.fs_virtualsdb = self.options.virtualsdb
 
-        doms = BackupManager._getdoms(masterdom)
+        tlist = self._get_extra_sources(filename, etree)
 
-        for de in doms:
-            for fses in de.firstChild.getElementsByTagName("filesystem"):
-                for scans in fses.getElementsByTagName("scan"):
-                    path = scans.getAttribute("path")
-                    self.fs_include += list(map(os.path.abspath,
-                                                glob.glob(path)))
-                for regexcl in fses.getElementsByTagName("noscan"):
-                    reattr = regexcl.getAttribute("regex")
-                    self.fs_exclude.append(reattr)
+        # process scanning targets
+        for cfile, conft in tlist:
+            self._cur_cfgfile = cfile
+            for scan_path in conft.findall("/filesystem/scan"):
+                self._CheckVal(scan_path.text, "Invalid scan element")
+                paths = [os.path.abspath(i) for i in glob.glob(scan_path.text)]
+                self.fs_include += [EnsureText(i) for i in paths]
 
-            for metas in de.firstChild.getElementsByTagName("metadata"):
-                for cmdouts in metas.getElementsByTagName("storeoutput"):
-                    meta_cmd = cmdouts.getAttribute("command")
-                    meta_dst = cmdouts.getAttribute("destination")
-                    self.meta_outputs.append(MetaOutput(meta_cmd, meta_dst))
+            # process noscan targets
+            for noscan_path in conft.findall("/filesystem/noscan"):
+                self._CheckVal(noscan_path.text, "Invalid noscan element")
+                self.fs_exclude.append(EnsureText(noscan_path.text))
 
-            de.unlink()
+            # metadata
+            for metas in conft.findall("/metadata/storeoutput"):
+                meta_cmd = EnsureText(metas.get("command"))
+                meta_dst = EnsureText(metas.get("destination"))
+                self._CheckVal(meta_cmd, "Invalid storeoutput command")
+                self._CheckVal(meta_dst, "Invalid storeoutput destination")
+                self.meta_outputs.append(MetaOutput(meta_cmd, meta_dst))
 
     def _addfilesys(self, archive):
         """Add the selected files to the archive.
