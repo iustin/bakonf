@@ -876,7 +876,7 @@ def genfakefile(sio=None, name = None, user='root', group='root', mtime=None):
     sio.seek(0, 0)
     return ti
 
-def main():
+def real_main():
     """Main function"""
 
     os.umask(63) # 0077 octal, but we write it in decimal due to py3k
@@ -948,9 +948,13 @@ def main():
     bm = BackupManager(options)
     bm.run()
 
-if __name__ == "__main__":
+def main():
+    """Wrapper over real_main()."""
     try:
-        main()
+        real_main()
     except ConfigurationError:
-        err2 = sys.exc_info()[1]
-        logging.error(str(err2))
+        err = sys.exc_info()[1]
+        logging.error(str(err))
+
+if __name__ == "__main__":
+    main()
