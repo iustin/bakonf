@@ -378,14 +378,16 @@ class FileManager(object):
     """
     __slots__ = ('scanlist', 'excludelist', 'errorlist', 'virtualsdb',
                  'backuplevel', 'subjects', 'scanned',
-                 'filelist', 'memberlist')
+                 'filelist', 'memberlist', 'maxsize')
 
-    def __init__(self, scanlist, excludelist, virtualsdb, backuplevel):
+    def __init__(self, scanlist, excludelist, virtualsdb, backuplevel,
+                 maxsize):
         """Constructor for class FileManager."""
         self.scanlist = scanlist
         self.excludelist = list(map(re.compile, excludelist))
         virtualsdb = os.path.abspath(virtualsdb)
         self.excludelist.append(re.compile("^%s$" % virtualsdb))
+        self.maxsize = maxsize
         self.errorlist = []
         self.filelist = []
         self.subjects = {}
@@ -515,7 +517,13 @@ class FileManager(object):
         self.scanned.append(path)
         logging.debug("Examining path %s", path)
         sf = self._findfile(path)
-        if sf.needsbackup():
+        if (self.maxsize > 0 and
+            sf.physical.size
+            and sf.physical.size > self.maxsize):
+            logging.warning("Skipping path %s due to size limit (%s > %s)",
+                            path, sf.physical.size, self.maxsize)
+            return []
+        elif sf.needsbackup():
             logging.debug("Selecting path %s", path)
             self.subjects[sf.name] = sf
             FileManager.addparents(path, self.filelist)
@@ -637,6 +645,7 @@ class BackupManager(object):
         self.options = options
         self.fs_include = []
         self.fs_exclude = []
+        self.fs_maxsize = -1
         self.meta_outputs = []
         self.fs_virtualsdb = None
         self.fs_donelist = []
@@ -693,6 +702,15 @@ class BackupManager(object):
         else:
             self.fs_virtualsdb = self.options.virtualsdb
 
+        msize = etree.find("/config/maxsize")
+        if msize is not None:
+            try:
+                self.fs_maxsize = int(msize.text)
+            except (ValueError, TypeError):
+                err = sys.exc_info()[1]
+                raise ConfigurationError(filename, "Invalid maxsize"
+                                         " value: %s" % err)
+
         tlist = self._get_extra_sources(filename, etree)
 
         # process scanning targets
@@ -728,7 +746,7 @@ class BackupManager(object):
         logging.info("Scanning files...")
         self.fs_manager = fm = FileManager(self.fs_include, self.fs_exclude,
                                            self.fs_virtualsdb,
-                                           self.options.level)
+                                           self.options.level, self.fs_maxsize)
         fm.checksources()
         errorlist = list(fm.errorlist)
         fs_list = fm.filelist
