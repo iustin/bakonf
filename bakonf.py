@@ -238,42 +238,27 @@ class FileState(object):
                      self.sha, self.mtime))
         return ret
 
-    def getmd5(self):
-        """Getter function for the MD5 hash.
-
-        This function looks to see if we already computed the hash,
-        and in that case just return it. Otherwise, compute it now and
-        return it.
-
-        """
-        if self._md5 is None:
+    def _gethash(self, kind):
+        """Return a cached hash or force compute it."""
+        val = getattr(self, kind)
+        if val is None:
             if not self.virtual and not self.force and stat.S_ISREG(self.mode):
                 self._readhashes()
-                return self._md5
+                return getattr(self, kind)
             else:
                 return ""
         else:
-            return self._md5
+            return val
 
-    def getsha(self):
-        """Getter function for the SHA hash.
+    @property
+    def md5(self):
+        """The MD5 hash of the file's contents."""
+        return self._gethash('_md5')
 
-        This function looks to see if we already computed the hash,
-        and in that case just return it. Otherwise, compute it now and
-        return it.
-
-        """
-        if self._sha is None:
-            if not self.virtual and not self.force and stat.S_ISREG(self.mode):
-                self._readhashes()
-                return self._sha
-            else:
-                return ""
-        else:
-            return self._sha
-
-    md5 = property(fget=getmd5, doc="The MD5 hash of the file's contents")
-    sha = property(fget=getsha, doc="The SHA hash of the file's contents")
+    @property
+    def sha(self):
+        """The SHA hash of the file's contents."""
+        return self._gethash('_sha')
 
     def serialize(self):
         """Encode the file state as a string"""
