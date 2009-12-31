@@ -2,6 +2,7 @@
  bakonf usermanual
 ===================
 
+.. contents::
 
 About this document
 ===================
@@ -197,7 +198,7 @@ when the file type in archive is different than actual file type
 
 
 Command execution/output
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 This section allows you to have more information about a system than is
 available in the filesystem. The current implementation allows you to
@@ -205,10 +206,10 @@ store output of shell commands. Suggestions about other items are
 welcome.
 
 Examples
-++++++++
+~~~~~~~~
 
 Partition table
-^^^^^^^^^^^^^^^
++++++++++++++++
 
 One of the most important items about a system (that is not stored in a
 file) is partition table about your disks, in the eventuality that you
@@ -216,7 +217,7 @@ have a data error in partition table. The command to back this up
 varies, for example ``sfdisk``, ``fdisk``, etc.
 
 Device list
-^^^^^^^^^^^
++++++++++++
 
 Having the device list is and their hardware configuration is useful in
 order to have a quick overview if you want to clone the configuration
@@ -226,7 +227,7 @@ and hardware config). Examples of scanning the configuration are ``lspci
 
 
 What can I use bakonf for?
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 At least for:
 
@@ -241,7 +242,7 @@ At least for:
   failure. Just reinstall the OS and put the config files back.
 
 Requirements
-~~~~~~~~~~~~
+------------
 
 To use bakonf, you must have the following:
 
