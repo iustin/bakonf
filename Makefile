@@ -19,7 +19,7 @@ dist:
 	cp bakonf.py $(DISTDIR)/bakonf
 	cp bakonf.xml bakonf.cron $(DISTDIR)
 	cp Makefile bakonf.spec $(DISTDIR)
-	make -C doc usermanual.html usermanual.txt bakonf.8
+	make -C doc all
 	mkdir $(DISTDIR)/doc
 	cp -a doc/usermanual.* $(DISTDIR)/doc/
 	cp -a doc/bakonf.* $(DISTDIR)
