@@ -735,7 +735,7 @@ class BackupManager(object):
 
             # command output
             for cmdouts in conft.findall("/commands/storeoutput"):
-                cmd_line = ensure_text(cmdouts.get("command"))
+                cmd_line = ensure_text(cmdouts.text)
                 cmd_dest = ensure_text(cmdouts.get("destination"))
                 self._check_val(cmd_line, "Invalid storeoutput command")
                 self.cmd_outputs.append(CmdOutput(cmd_line, cmd_dest))

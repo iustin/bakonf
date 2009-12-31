@@ -305,13 +305,16 @@ commands
   Starts declarations about command output to be included in the
   archive, and can contain:
 
-  storeoutput command="CMDLINE" destination="PATH"
-    Tells bakonf to execute the given CMDLINE (as a shell command) and
-    include its output in a file named ``commands/PATH`` in the created
-    archive. For example, the element::
+  storeoutput
+    Tells bakonf to execute the command line (as a shell command) given
+    as the tag contents and include its output in a file under the
+    ``commands`` subtree in the created archive. If no ``destination``
+    attribute is given, then the destination is takes as the command
+    line with slashes replaced by underscores, otherwise the given path
+    will be used. For example, the element::
 
-       <storeoutput command="cat /proc/version"
-                    destination="proc/version"/>
+       <storeoutput
+            destination="proc/version">cat /proc/version</storeoutput>
 
     will create a file in the archive with the name
     ``commands/proc/version`` which will contain the ``/proc/version``
