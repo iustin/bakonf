@@ -39,8 +39,8 @@
       </group>
       <arg choice="req"><option>-L, --level=</option>0|1</arg>
 
-      <arg choice="opt"><option>-V,
-      --virtuals-db=<replaceable>FILENAME</replaceable></option></arg>
+      <arg choice="opt"><option>-S,
+      --state-file=<replaceable>FILENAME</replaceable></option></arg>
 
     </cmdsynopsis>
     <cmdsynopsis>
@@ -64,9 +64,9 @@
         <term>-L, --level=0|1</term>
         <listitem>
           <para>this options applies to the archiving of files. If the
-          level given is 0, the virtuals database is cleared, all
+          level given is 0, the state database is cleared, all
           files which match the configuration options are archived,
-          and their state is then saved in the virtuals database. If
+          and their state is then saved in the state database. If
           the level is 1, the database is opened readonly, and only
           the files which are no longer equal with their state as
           recorded in the database, or files which don't have an entry
@@ -109,7 +109,7 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term>-V, --virtuals-db=FILE</term>
+        <term>-S, --state-file=FILE</term>
         <listitem>
           <para>This options will override the value for the
           database. It can be used for quick testing instead of

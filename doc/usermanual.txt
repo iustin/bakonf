@@ -460,6 +460,13 @@ If you had a catastrophic system failure, you should follow these steps:
 1. Copy all the files in the archive in the filesystem, overwriting the
    defaults from the packages.
 
+Glossary
+========
+
+statefile
+  The database that is used for saving file states for the multi-level
+  backup method
+
 .. vim: set textwidth=72 :
 .. Local Variables:
 .. mode: rst

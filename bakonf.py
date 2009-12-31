@@ -31,7 +31,7 @@ PKG_VERSION = "0.5.3"
 DB_VERSION  = "1"
 ENCODING = "utf-8"
 
-DEFAULT_VPATH = "/etc/bakonf/virtuals.db"
+DEFAULT_VPATH = "/var/lib/bakonf/statefile.db"
 
 import sys
 import stat
@@ -365,17 +365,17 @@ class FileManager(object):
     we don't double-add to the archive.
 
     """
-    __slots__ = ('scanlist', 'excludelist', 'errorlist', 'virtualsdb',
+    __slots__ = ('scanlist', 'excludelist', 'errorlist', 'statedb',
                  'backuplevel', 'subjects', 'scanned',
                  'filelist', 'memberlist', 'maxsize')
 
-    def __init__(self, scanlist, excludelist, virtualsdb, backuplevel,
+    def __init__(self, scanlist, excludelist, statefile, backuplevel,
                  maxsize):
         """Constructor for class FileManager."""
         self.scanlist = scanlist
         self.excludelist = list(map(re.compile, excludelist))
-        virtualsdb = os.path.abspath(virtualsdb)
-        self.excludelist.append(re.compile("^%s$" % virtualsdb))
+        statefile = os.path.abspath(statefile)
+        self.excludelist.append(re.compile("^%s$" % statefile))
         self.maxsize = maxsize
         self.errorlist = []
         self.filelist = []
@@ -388,18 +388,18 @@ class FileManager(object):
         else:
             raise ValueError("Unknown backup level %u" % backuplevel)
         self.backuplevel = backuplevel
-        self.virtualsdb = bsddb.hashopen(virtualsdb, mode)
+        self.statedb = bsddb.hashopen(statefile, mode)
         if backuplevel == 0:
             self._dbput("bakonf:db_version", DB_VERSION)
             self._dbput("bakonf:db_date", str(time.time()))
         else:
             for check in ("bakonf:db_version", "bakonf:db_date"):
                 if not self._dbhas(check):
-                    raise ConfigurationError(virtualsdb,
+                    raise ConfigurationError(statefile,
                                              "Invalid database contents!")
             currvers = self._dbget("bakonf:db_version")
             if currvers != DB_VERSION:
-                raise ConfigurationError(virtualsdb,
+                raise ConfigurationError(statefile,
                                          "Invalid database version '%s'" %
                                          currvers)
             dbtime = float(self._dbget("bakonf:db_date"))
@@ -416,7 +416,7 @@ class FileManager(object):
 
         """
         key = key.encode(ENCODING)
-        self.virtualsdb[key] = value.encode(ENCODING)
+        self.statedb[key] = value.encode(ENCODING)
 
     def _dbget(self, key):
         """Get and entry from the virtuals database.
@@ -427,8 +427,8 @@ class FileManager(object):
 
         """
         key = key.encode(ENCODING)
-        if key in self.virtualsdb:
-            value = self.virtualsdb[key].decode(ENCODING)
+        if key in self.statedb:
+            value = self.statedb[key].decode(ENCODING)
         else:
             value = None
         return value
@@ -442,7 +442,7 @@ class FileManager(object):
 
         """
         key = key.encode(ENCODING)
-        return key in self.virtualsdb
+        return key in self.statedb
 
     def _findfile(self, name):
         """Locate a file's entry in the virtuals database.
@@ -576,7 +576,7 @@ class FileManager(object):
     def close(self):
         """Ensure database has been written to disc."""
 
-        self.virtualsdb.close()
+        self.statedb.close()
 
 class MetaOutput(object):
     """Denoted a meta-information to be stored in an archive.
@@ -636,7 +636,7 @@ class BackupManager(object):
         self.fs_exclude = []
         self.fs_maxsize = -1
         self.meta_outputs = []
-        self.fs_virtualsdb = None
+        self.fs_statefile = None
         self.fs_donelist = []
         self.fs_manager = None
         self._cur_cfgfile = None
@@ -682,14 +682,14 @@ class BackupManager(object):
         if etree.getroot().tag != "bakonf":
             raise ConfigurationError(filename, "XML file root is not bakonf")
         self._cur_cfgfile = filename
-        if self.options.virtualsdb is None:
-            vpath = etree.find("/config/virtualsdb")
+        if self.options.statefile is None:
+            vpath = etree.find("/config/statefile")
             if vpath is None:
-                self.fs_virtualsdb = DEFAULT_VPATH
+                self.fs_statefile = DEFAULT_VPATH
             else:
-                self.fs_virtualsdb = vpath.text
+                self.fs_statefile = vpath.text
         else:
-            self.fs_virtualsdb = self.options.virtualsdb
+            self.fs_statefile = self.options.statefile
 
         msize = etree.find("/config/maxsize")
         if msize is not None:
@@ -734,7 +734,7 @@ class BackupManager(object):
         stime = time.time()
         logging.info("Scanning files...")
         self.fs_manager = fm = FileManager(self.fs_include, self.fs_exclude,
-                                           self.fs_virtualsdb,
+                                           self.fs_statefile,
                                            self.options.level, self.fs_maxsize)
         fm.checksources()
         errorlist = list(fm.errorlist)
@@ -907,8 +907,8 @@ def real_main():
     op.add_option("-d", "--dir", dest="destdir",
                   help="the directory where to store the archive",
                   metavar="DIRECTORY", default="/var/lib/bakonf/archives")
-    op.add_option("-V", "--virtuals-db", dest="virtualsdb",
-                  help="virtuals database (overrides config file)",
+    op.add_option("-S", "--statefile", dest="statefile",
+                  help="location of the state file (overrides config file)",
                   metavar="FILE", default=None)
     op.add_option("-L", "--level", dest="level",
                   help="specify the level of the backup: 0, 1",
