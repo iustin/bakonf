@@ -31,7 +31,9 @@ PKG_VERSION = "0.5.3"
 DB_VERSION  = "1"
 ENCODING = "utf-8"
 
+# constants
 DEFAULT_VPATH = "/var/lib/bakonf/statefile.db"
+CMD_PREFIX = "commands"
 
 import sys
 import stat
@@ -578,8 +580,8 @@ class FileManager(object):
 
         self.statedb.close()
 
-class MetaOutput(object):
-    """Denoted a meta-information to be stored in an archive.
+class CmdOutput(object):
+    """Denotes a command result to be stored in an archive.
 
     This class represents the element storeoutput in the configuration
     file. It will store the output of a command in the archive.
@@ -588,7 +590,7 @@ class MetaOutput(object):
     __slots__ = ('command', 'destination', 'errors')
 
     def __init__(self, command, destination):
-        """Constructor for the MetaOutput class."""
+        """Constructor for the CmdOutput class."""
         self.command = command
         self.destination = destination
         if self.destination.startswith("/"):
@@ -597,6 +599,8 @@ class MetaOutput(object):
 
     def store(self, archive):
         """Store the output of my command in the archive."""
+        logging.debug("Executing command %s, storing output as %s",
+                      self.command, self.destination)
         nret = 1
         child = subprocess.Popen(self.command, shell=True,
                                  stdin=subprocess.PIPE,
@@ -616,8 +620,8 @@ class MetaOutput(object):
             logging.warning("'%s' %s.", self.command, err)
         fhandle = BytesIO()
         fhandle.write(output)
-        ti = genfakefile(fhandle, name=os.path.join("metadata",
-                                                    self.destination))
+        name = os.path.join(CMD_PREFIX, self.destination)
+        ti = genfakefile(fhandle, name=name)
         archive.addfile(ti, fhandle)
         return nret
 
@@ -626,7 +630,7 @@ class BackupManager(object):
 
     Class which deals with top-level issues regarding archiving:
     creation of the archive, parsing of configuration files, storing
-    meta-informations, etc.
+    command output, etc.
 
     """
     def __init__(self, options):
@@ -635,7 +639,7 @@ class BackupManager(object):
         self.fs_include = []
         self.fs_exclude = []
         self.fs_maxsize = -1
-        self.meta_outputs = []
+        self.cmd_outputs = []
         self.fs_statefile = None
         self.fs_donelist = []
         self.fs_manager = None
@@ -715,13 +719,13 @@ class BackupManager(object):
                 self._check_val(noscan_path.text, "Invalid noscan element")
                 self.fs_exclude.append(ensure_text(noscan_path.text))
 
-            # metadata
-            for metas in conft.findall("/metadata/storeoutput"):
-                meta_cmd = ensure_text(metas.get("command"))
-                meta_dst = ensure_text(metas.get("destination"))
-                self._check_val(meta_cmd, "Invalid storeoutput command")
-                self._check_val(meta_dst, "Invalid storeoutput destination")
-                self.meta_outputs.append(MetaOutput(meta_cmd, meta_dst))
+            # command output
+            for cmdouts in conft.findall("/commands/storeoutput"):
+                cmd_line = ensure_text(cmdouts.get("command"))
+                cmd_dest = ensure_text(cmdouts.get("destination"))
+                self._check_val(cmd_line, "Invalid storeoutput command")
+                self._check_val(cmd_dest, "Invalid storeoutput destination")
+                self.cmd_outputs.append(CmdOutput(cmd_line, cmd_dest))
 
     def _addfilesys(self, archive):
         """Add the selected files to the archive.
@@ -772,10 +776,10 @@ class BackupManager(object):
         fh = genfakefile(sio, name="unarchived_files.lst")
         archive.addfile(fh, sio)
 
-    def _addmetas(self, archive):
-        """Add the metainformations to the archive.
+    def _addcommands(self, archive):
+        """Add the command outputs to the archive.
 
-        This functions adds the configured metainformations to the
+        This functions adds the configured command outputs to the
         archive. If any command exits with status non-zero, or other
         error is encountered, its output will still be listed in the
         archive, but the command and its status will be listed in
@@ -783,9 +787,9 @@ class BackupManager(object):
 
         """
         errorlist = []
-        for meta in self.meta_outputs:
-            if not meta.store(archive):
-                errorlist.append(meta.errors)
+        for cmd in self.cmd_outputs:
+            if not cmd.store(archive):
+                errorlist.append(cmd.errors)
 
         sio = BytesIO()
         for (cmd, error) in errorlist:
@@ -843,10 +847,10 @@ class BackupManager(object):
             signature += " do_filesystem"
             self._addfilesys(tarh)
 
-        # Add metainformations
-        if opts.do_metas:
-            signature += " do_metainformations"
-            self._addmetas(tarh)
+        # Add command output
+        if opts.do_commands:
+            signature += " do_command_output"
+            self._addcommands(tarh)
 
         # Add readme stuff
         logging.info(signature)
@@ -922,8 +926,8 @@ def real_main():
     op.add_option("", "--no-filesystem", dest="do_files",
                   help="don't backup files",
                   action="store_false", default=1)
-    op.add_option("", "--no-metas", dest="do_metas",
-                  help="don't backup meta-informations",
+    op.add_option("", "--no-commands", dest="do_commands",
+                  help="don't run and store command execution output",
                   action="store_false", default=1)
     op.add_option("-v", "--verbose", dest="verbose", action="count",
                   help="be verbose in operation", default=0)
@@ -937,7 +941,7 @@ def real_main():
         lvl = logging.INFO
     logging.basicConfig(level=lvl, format="%(levelname)s: %(message)s")
 
-    if not options.do_files and not options.do_metas:
+    if not options.do_files and not options.do_commands:
         logging.error("Nothing to backup!")
         sys.exit(1)
 

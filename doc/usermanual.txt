@@ -108,10 +108,10 @@ bakonf home page is http://www.nongnu.org/bakonf/. The project is hosted
 at http://savannah.nongnu.org/projects/bakonf/.
 
 You can regard bakonf as a rescue archive creator. It creates an archive
-of configuration files and metadata information about the system. By
-metadata, I mean data which is not found anywhere in the filesystem as
-simple files: partition table layout, hardware configuration, kernel
-version, etc.
+of configuration files and other information about the system. By other
+information, I mean data which is not found anywhere in the filesystem
+as simple files: partition table layout, hardware configuration, kernel
+version, etc., but that can be gathered from shell commands output.
 
 .. list-table:: Archive layout
    :header-rows: 1
@@ -133,13 +133,13 @@ version, etc.
      - A file which contains details about which commands have exited
        with non-zero status. Their output is still stored in the
        archive, though.
-     - When metadata backup has been performed
+     - When command execution has been performed
    * - ``filesystem/``
      - Files backed up are stored under this path.
      - When filesystem backup has been performed
-   * - ``metadata/``
+   * - ``commands/``
      - Outputs from the command exectution are stored under this path.
-     - When metadata backup has been performed
+     - When command execution has been performed
 
 Filesystem backup
 -----------------
@@ -196,9 +196,10 @@ when the file type in archive is different than actual file type
   in this case, bakonf always selects the file for archiving
 
 
-Metadata
-~~~~~~~~
-Metadata allows you to have more information about a system than is
+Command execution/output
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+This section allows you to have more information about a system than is
 available in the filesystem. The current implementation allows you to
 store output of shell commands. Suggestions about other items are
 welcome.
@@ -209,9 +210,10 @@ Examples
 Partition table
 ^^^^^^^^^^^^^^^
 
-The most important metadata item is partition table about your disks, in
-the eventuality that you have a data error in partition table. The
-command to back this up varies, for example ``sfdisk``, ``fdisk``, etc.
+One of the most important items about a system (that is not stored in a
+file) is partition table about your disks, in the eventuality that you
+have a data error in partition table. The command to back this up
+varies, for example ``sfdisk``, ``fdisk``, etc.
 
 Device list
 ^^^^^^^^^^^
@@ -279,7 +281,7 @@ include
   /etc/bakonf/sources. These are not directories to be backed up!
   (Although, if modified and included by the ``filesystem`` element, they
   will be). Note that the sub-files can contain only ``filesystem`` and
-  ``metadata`` sections.
+  ``commands`` sections.
 
 filesystem
   Contains declarations about files to be backed up:
@@ -298,20 +300,20 @@ filesystem
     contents of the as (interpreted as a regular expression) from the
     archive; it won't even open or analyse those files.
 
-metadata
-  Starts declarations about metainformations to be included in the
+commands
+  Starts declarations about command output to be included in the
   archive, and can contain:
 
   storeoutput command="CMDLINE" destination="PATH"
     Tells bakonf to execute the given CMDLINE (as a shell command) and
-    include its output in a file named ``metadata/PATH`` in the created
+    include its output in a file named ``commands/PATH`` in the created
     archive. For example, the element::
 
        <storeoutput command="cat /proc/version"
                     destination="proc/version"/>
 
     will create a file in the archive with the name
-    ``metadata/proc/version`` which will contain the ``/proc/version``
+    ``commands/proc/version`` which will contain the ``/proc/version``
     file.
 
 
@@ -368,7 +370,7 @@ distribution)::
      File which contains hardware related informations, mostly
      extracted from the /proc filesystem (under GNU/Linux)
   -->
-    <metadata>
+    <commands>
       <!-- Proc values -->
       <storeoutput command="cat /proc/version" destination="proc/version"/>
       <storeoutput command="cat /proc/dma" destination="proc/dma"/>
@@ -382,7 +384,7 @@ distribution)::
       <!-- Also hardware information -->
       <storeoutput command="/sbin/lspci -vv" destination="lspci.txt"/>
       <storeoutput command="/sbin/lsusb -vv" destination="lsusb.txt"/>
-  </metadata>
+  </commands>
   </bakonf>
 
 File list
@@ -453,7 +455,7 @@ Complete system restoration
 If you had a catastrophic system failure, you should follow these steps:
 
 1. Reinstall the operating system on a clean machine. Use the given
-   information in the ``/metadata`` directory in the archive to achieve
+   information in the ``/commands`` directory in the archive to achieve
    an as close as possible configuration as the old system
    (e.g. partition layout, packages installed, etc.)
 

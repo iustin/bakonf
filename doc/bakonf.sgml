@@ -35,7 +35,7 @@
       </group>
       <group>
         <arg choice="opt"><option>--no-filesystem</option></arg>
-        <arg choice="opt"><option>--no-metas</option></arg>
+        <arg choice="opt"><option>--no-commands</option></arg>
       </group>
       <arg choice="req"><option>-L, --level=</option>0|1</arg>
 
@@ -55,8 +55,8 @@
   <refsect1>
     <title>Description</title>
 
-    <para>Archive some parts of the filesystem and some
-    meta-informations, as directed by the configuration file.</para>
+    <para>Archive some parts of the filesystem and command output, as
+    directed by the configuration file.</para>
 
     <para>The following options are recognized:</para>
     <variablelist>
@@ -137,10 +137,9 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term>--no-metas</term>
+        <term>--no-commands</term>
         <listitem>
-          <para>do not save any metainformations in the
-          filesystem</para>
+          <para>do not save command output in the archive</para>
         </listitem>
       </varlistentry>
       <varlistentry>
