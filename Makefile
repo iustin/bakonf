@@ -1,6 +1,28 @@
 NAME=bakonf
 VERSION=0.5.3
 DISTDIR=$(NAME)-$(VERSION)
+
+DOCS = \
+	doc/usermanual.html \
+	doc/bakonf.8
+
+all: $(DOCS)
+
+.PHONY: maintainer-clean
+maintainer-clean:
+	rm -f $(DOCS)
+
+%.html: %.txt
+	rst2html $< > $@
+
+%.8: %.sgml
+	cd $$(dirname $^) && \
+	docbook2man $$(basename $^); \
+	rm -f manpage.links manpage.refs
+
+doc/man.html:
+	db2html doc/bakonf.sgml
+
 install:
 	install -d -m 0700 $(DESTDIR)/etc/bakonf
 	install -d -m 0700 $(DESTDIR)/etc/bakonf/sources
@@ -14,12 +36,11 @@ install:
 	install -D -m 0644 bakonf.8 $(DESTDIR)/usr/share/man/man8/bakonf.8
 	install -D -m 0600 bakonf.cron $(DESTDIR)/etc/cron.d/bakonf
 
-dist:
+dist: $(DOC)
 	mkdir $(DISTDIR)
 	cp bakonf.py $(DISTDIR)/bakonf
 	cp bakonf.xml bakonf.cron $(DISTDIR)
 	cp Makefile bakonf.spec $(DISTDIR)
-	make -C doc all
 	mkdir $(DISTDIR)/doc
 	cp -a doc/usermanual.* $(DISTDIR)/doc/
 	cp -a doc/bakonf.* $(DISTDIR)
