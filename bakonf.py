@@ -76,7 +76,7 @@ else:
     BTYPE = str
 
 
-def EnsureText(val):
+def ensure_text(val):
     """Ensure a string/bytes/unicode object is a 'text' object."""
     if isinstance(val, BTYPE):
         # this is an encoded (bytes) value, need to decode
@@ -638,7 +638,7 @@ class BackupManager(object):
         self._cur_cfgfile = None
         self._parseconf(options.configfile)
 
-    def _CheckVal(self, val, msg):
+    def _check_val(self, val, msg):
         """Checks that a given value is well-formed.
 
         Right now this is just not empty (None).
@@ -658,7 +658,7 @@ class BackupManager(object):
         """
         elist = [(mainfile, main_tree)]
         for incl in main_tree.findall("/include"):
-            self._CheckVal(incl.text, "Invalid include directive")
+            self._check_val(incl.text, "Invalid include directive")
             for fname in glob.glob(incl.text):
                 ctree = ElementTree(file=fname)
                 if ctree.getroot().tag != "bakonf":
@@ -702,21 +702,21 @@ class BackupManager(object):
         for cfile, conft in tlist:
             self._cur_cfgfile = cfile
             for scan_path in conft.findall("/filesystem/scan"):
-                self._CheckVal(scan_path.text, "Invalid scan element")
+                self._check_val(scan_path.text, "Invalid scan element")
                 paths = [os.path.abspath(i) for i in glob.glob(scan_path.text)]
-                self.fs_include += [EnsureText(i) for i in paths]
+                self.fs_include += [ensure_text(i) for i in paths]
 
             # process noscan targets
             for noscan_path in conft.findall("/filesystem/noscan"):
-                self._CheckVal(noscan_path.text, "Invalid noscan element")
-                self.fs_exclude.append(EnsureText(noscan_path.text))
+                self._check_val(noscan_path.text, "Invalid noscan element")
+                self.fs_exclude.append(ensure_text(noscan_path.text))
 
             # metadata
             for metas in conft.findall("/metadata/storeoutput"):
-                meta_cmd = EnsureText(metas.get("command"))
-                meta_dst = EnsureText(metas.get("destination"))
-                self._CheckVal(meta_cmd, "Invalid storeoutput command")
-                self._CheckVal(meta_dst, "Invalid storeoutput destination")
+                meta_cmd = ensure_text(metas.get("command"))
+                meta_dst = ensure_text(metas.get("destination"))
+                self._check_val(meta_cmd, "Invalid storeoutput command")
+                self._check_val(meta_dst, "Invalid storeoutput destination")
                 self.meta_outputs.append(MetaOutput(meta_cmd, meta_dst))
 
     def _addfilesys(self, archive):
