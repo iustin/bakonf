@@ -592,10 +592,24 @@ class CmdOutput(object):
     def __init__(self, command, destination):
         """Constructor for the CmdOutput class."""
         self.command = command
+        if destination is None:
+            destination = self._sanitize_name(command)
         self.destination = destination
         if self.destination.startswith("/"):
             self.destination = self.destination[1:]
         self.errors = None
+
+    @staticmethod
+    def _sanitize_name(path):
+        """Makes sure path can be used as a plain filename.
+
+        This just replaces slashes with underscores.
+
+        """
+        path = path.replace(os.path.sep, "_")
+        if os.path.altsep is not None:
+            path = path.replace(os.path.altsep, "_")
+        return path
 
     def store(self, archive):
         """Store the output of my command in the archive."""
@@ -724,7 +738,6 @@ class BackupManager(object):
                 cmd_line = ensure_text(cmdouts.get("command"))
                 cmd_dest = ensure_text(cmdouts.get("destination"))
                 self._check_val(cmd_line, "Invalid storeoutput command")
-                self._check_val(cmd_dest, "Invalid storeoutput destination")
                 self.cmd_outputs.append(CmdOutput(cmd_line, cmd_dest))
 
     def _addfilesys(self, archive):
