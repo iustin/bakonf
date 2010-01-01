@@ -918,6 +918,7 @@ def real_main():
              "  - archives will be stored under /var/lib/bakonf/archives\n")
     op = OptionParser(version="%%prog %s\n%s" % (PKG_VERSION, _COPY),
                       usage=usage)
+    op.set_defaults(verbose=1)
     op.add_option("-c", "--config-file", dest="configfile",
                   help="configuration file [%s]" % config_file,
                   metavar="FILE", default=config_file)
@@ -946,15 +947,17 @@ def real_main():
                   help="don't run and store command execution output",
                   action="store_false", default=1)
     op.add_option("-v", "--verbose", dest="verbose", action="count",
-                  help="be verbose in operation", default=0)
+                  help="be verbose in operation")
+    op.add_option("-q", "--quiet", dest="verbose", action="store_const",
+                  help="set verbosity to zero", const=0)
     (options, _) = op.parse_args()
     options.archive_id = archive_id
-    if options.verbose > 1:
+    if options.verbose >= 2:
         lvl = logging.DEBUG
-    elif options.verbose > 0:
-        lvl = logging.WARNING
-    else:
+    elif options.verbose == 1:
         lvl = logging.INFO
+    else:
+        lvl = logging.WARNING
     logging.basicConfig(level=lvl, format="%(levelname)s: %(message)s")
 
     if not options.do_files and not options.do_commands:

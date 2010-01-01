@@ -42,6 +42,9 @@
       <arg choice="opt"><option>-S,
       --state-file=<replaceable>FILENAME</replaceable></option></arg>
 
+      <arg choice="opt" rep="repeat"><option>-v</option>, <option>--verbose</option></arg>
+      <arg choice="opt"><option>-q</option>, <option>--quiet</option></arg>
+
     </cmdsynopsis>
     <cmdsynopsis>
       <command>bakonf</command>
@@ -140,6 +143,22 @@
         <term>--no-commands</term>
         <listitem>
           <para>do not save command output in the archive</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>-v, --verbose</term>
+        <listitem>
+          <para>increases the verbosity by one; the default level of
+          verbosity is one, under which information and higher
+          severity messages are displayed; at level two, debug mode is
+          enabled which shows the trace of actions</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>-q, --quiet</term>
+        <listitem>
+          <para>resets the verbosity to zero; at this level, only
+          warning and higher messages are shown</para>
         </listitem>
       </varlistentry>
       <varlistentry>
