@@ -8,9 +8,9 @@ About this document
 ===================
 
 
-This is the usermanual for the bakonf project, version 0.5.3; homepage
-is at http://www.nongnu.org/bakonf/. You can also get new versions of
-this document there.
+This is the usermanual for the bakonf project, version 0.6.0; the
+homepage is at http://www.nongnu.org/bakonf/. You can also get new
+versions of this document there.
 
 Introduction
 ============

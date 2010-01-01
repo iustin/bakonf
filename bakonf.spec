@@ -1,6 +1,6 @@
 Summary: A configuration file backup tool
 Name: bakonf
-Version: 0.5.3
+Version: 0.6.0
 Release: 1
 License: GPL
 Vendor: Iustin Pop
@@ -43,6 +43,10 @@ rm -rf $RPM_BUILD_ROOT
 /etc/cron.d/bakonf
 
 %changelog
+* Fri Jan 01 2010 Iustin Pop <iusty@k1024.org> 0.6.0-1
+- Add compatiblity with python 3.x
+- Many changes to the configuration file format and archive layout
+
 * Sat Dec 06 2008 Iustin Pop <iusty@k1024.org> 0.5.3-1
 - Fix compatibility with python 2.5
 
@@ -58,5 +62,5 @@ rm -rf $RPM_BUILD_ROOT
 * Thu Dec 12 2002 Iustin Pop <iusty@k1024.org> 0.3-1
 - Version 0.3
 
-* Wed Dec 11 2002 Iustin Pop <iusty@k1024.org> 
+* Wed Dec 11 2002 Iustin Pop <iusty@k1024.org>
 - Initial build.
