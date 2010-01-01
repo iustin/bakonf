@@ -39,6 +39,7 @@ ENCODING = "utf-8"
 
 # constants
 DEFAULT_VPATH = "/var/lib/bakonf/statefile.db"
+DEFAULT_ODIR = "/var/lib/bakonf/archives"
 CMD_PREFIX = "commands"
 
 import sys
@@ -937,11 +938,11 @@ def real_main():
     my_hostname = os.uname()[1]
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
     config_file = "/etc/bakonf/bakonf.xml"
-    usage = ("usage: %prog [options]\n"
+    usage = ("usage: %%prog [options]\n"
              "\n"
              "See the manpage for more informations. Defaults are:\n"
              "  - archives will be named hostname-YYYY-MM-DD.tar\n"
-             "  - archives will be stored under /var/lib/bakonf/archives\n")
+             "  - archives will be stored under %s\n" % DEFAULT_ODIR)
     op = OptionParser(version="%%prog %s\n%s" % (PKG_VERSION, _COPY),
                       usage=usage)
     op.set_defaults(verbose=1)
@@ -953,7 +954,7 @@ def real_main():
                   metavar="ARCHIVE", default=None)
     op.add_option("-d", "--dir", dest="destdir",
                   help="the directory where to store the archive",
-                  metavar="DIRECTORY", default="/var/lib/bakonf/archives")
+                  metavar="DIRECTORY", default=DEFAULT_ODIR)
     op.add_option("-S", "--statefile", dest="statefile",
                   help="location of the state file (overrides config file)",
                   metavar="FILE", default=None)
