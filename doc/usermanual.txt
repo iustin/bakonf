@@ -250,6 +250,7 @@ To use bakonf, you must have the following:
 - `Python <http://www.python.org/>`_ version 2.4 or higher
 - the ElementTree library for Python, for parsing the configuration
   file(s)
+- the pybsddb library, if not bundled with your Python distribution
 
 
 Configuration
