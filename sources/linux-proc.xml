@@ -3,17 +3,17 @@
      File which contains hardware related informations, mostly
      extracted from the /proc filesystem
 -->
-<metadata>
+<commands>
     <!-- Proc values -->
-    <storeoutput command="cat /proc/version" destination="proc/version"/>
-    <storeoutput command="cat /proc/dma" destination="proc/dma"/>
-    <storeoutput command="cat /proc/interrupts" destination="proc/interrupts"/>
-    <storeoutput command="cat /proc/ioports" destination="proc/ioports"/>
-    <storeoutput command="cat /proc/iomem" destination="proc/iomem"/>
-    <storeoutput command="cat /proc/cpuinfo" destination="proc/cpuinfo"/>
-    <storeoutput command="cat /proc/partitions" destination="proc/partitions"/>
+    <storeoutput destination="proc/version">cat /proc/version</storeoutput>
+    <storeoutput destination="proc/dma">cat /proc/dma</storeoutput>
+    <storeoutput destination="proc/interrupts">cat /proc/interrupts</storeoutput>
+    <storeoutput destination="proc/ioports">cat /proc/ioports</storeoutput>
+    <storeoutput destination="proc/iomem">cat /proc/iomem</storeoutput>
+    <storeoutput destination="proc/cpuinfo">cat /proc/cpuinfo</storeoutput>
+    <storeoutput destination="proc/partitions">cat /proc/partitions</storeoutput>
     <!-- Also hardware information -->
-    <storeoutput command="lspci -vv" destination="lspci.txt"/>
-    <storeoutput command="lsusb -vv" destination="lsusb.txt"/>
-</metadata>
+    <storeoutput>lspci -vv</storeoutput>
+    <storeoutput>lsusb -vv</storeoutput>
+</commands>
 </bakonf>
