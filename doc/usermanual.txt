@@ -325,8 +325,8 @@ config
   Configuration section that modifies the behaviour of
   bakonf. It can contain:
 
-  virtualsdb
-    This elements contains the filename of the virtuals database.
+  statefile
+    This elements contains the filename of the state database.
 
   maxsize
     This element denotes the maximum size of files to be backed up.
