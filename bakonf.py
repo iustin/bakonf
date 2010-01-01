@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2002, 2004, 2008 Iustin Pop
+# Copyright (C) 2002, 2004, 2008, 2009, 2010 Iustin Pop
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,12 @@ included in the generated archive.
 
 """
 
+_COPY = ("Written by Iustin Pop\n\n"
+         "Copyright (C) 2002, 2004, 2008, 2009, 2010 Iustin Pop\n"
+         "This is free software; see the source for copying conditions."
+         " There is NO\n"
+         "warranty; not even for MERCHANTABILITY or FITNESS"
+         " FOR A PARTICULAR PURPOSE.")
 PKG_VERSION = "0.5.3"
 DB_VERSION  = "1"
 ENCODING = "utf-8"
@@ -910,11 +916,8 @@ def real_main():
              "See the manpage for more informations. Defaults are:\n"
              "  - archives will be named hostname-YYYY-MM-DD.tar\n"
              "  - archives will be stored under /var/lib/bakonf/archives\n")
-    op = OptionParser(version="%%prog %s\nWritten by Iustin Pop\n\nCopyright"
-                      " (C) 2002 Iustin Pop\nThis is free software; see the "
-                      "source for copying conditions.  There is NO\nwarranty"
-                      "; not even for MERCHANTABILITY or FITNESS FOR A "
-                      "PARTICULAR PURPOSE." % PKG_VERSION, usage=usage)
+    op = OptionParser(version="%%prog %s\n%s" % (PKG_VERSION, _COPY),
+                      usage=usage)
     op.add_option("-c", "--config-file", dest="configfile",
                   help="configuration file [%s]" % config_file,
                   metavar="FILE", default=config_file)
