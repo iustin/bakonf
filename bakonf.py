@@ -792,7 +792,8 @@ class BackupManager(object):
         errorlist = list(fm.errorlist)
         fs_list = fm.filelist
         ntime = time.time()
-        logging.info("Done scanning, in %.4f seconds", ntime - stime)
+        logging.info("Done scanning, %.4f seconds, %d files",
+                     ntime - stime, len(fs_list))
         logging.info("Archiving files...")
         donelist = self.fs_donelist
         archive.add(name="/", arcname="filesystem/", recursive=0)
@@ -815,7 +816,7 @@ class BackupManager(object):
             else: # Successful archiving of the member
                 donelist.append(path)
         ptime = time.time()
-        logging.info("Done archiving files, in %.4f seconds.", ptime - ntime)
+        logging.info("Done archiving files, %.4f seconds.", ptime - ntime)
 
         contents = ["'%s'\t'%s'" % v for v in errorlist]
         storefakefile(archive, "\n".join(contents), "unarchived_files.lst")
