@@ -46,7 +46,7 @@ dist: $(DOC)
 	cp -a doc/bakonf.* $(DISTDIR)
 	mkdir $(DISTDIR)/sources
 	cp -a sources/*.xml $(DISTDIR)/sources
-	cp README COPYING $(DISTDIR)
+	cp README NEWS COPYING $(DISTDIR)
 	tar cvzf $(NAME)-$(VERSION).tar.gz $(DISTDIR)
 	rm -rf $(DISTDIR)
 
