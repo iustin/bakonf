@@ -669,11 +669,8 @@ class CmdOutput(object):
             self.errors = (self.command, err)
             nret = 0
             logging.warning("'%s' %s.", self.command, err)
-        fhandle = BytesIO()
-        fhandle.write(output)
         name = os.path.join(CMD_PREFIX, self.destination)
-        ti = genfakefile(fhandle, name=name)
-        archive.addfile(ti, fhandle)
+        storefakefile(archive, output, name)
         return nret
 
 class BackupManager(object):
@@ -819,12 +816,8 @@ class BackupManager(object):
         ptime = time.time()
         logging.info("Done archiving files, in %.4f seconds.", ptime - ntime)
 
-        sio = BytesIO()
-        for (filename, error) in errorlist:
-            msg = "'%s'\t'%s'\n" % (filename, error)
-            sio.write(msg.encode(ENCODING))
-        fh = genfakefile(sio, name="unarchived_files.lst")
-        archive.addfile(fh, sio)
+        contents = ["'%s'\t'%s'" % v for v in errorlist]
+        storefakefile(archive, "\n".join(contents), "unarchived_files.lst")
 
     def _addcommands(self, archive):
         """Add the command outputs to the archive.
@@ -841,12 +834,8 @@ class BackupManager(object):
             if not cmd.store(archive):
                 errorlist.append(cmd.errors)
 
-        sio = BytesIO()
-        for (cmd, error) in errorlist:
-            msg = "'%s'\t'%s'\n" % (cmd, error)
-            sio.write(msg.encode(ENCODING))
-        fh = genfakefile(sio, name="commands_with_errors.lst")
-        archive.addfile(fh, sio)
+        contents = ["'%s'\t'%s'\n" % v for v in errorlist]
+        storefakefile(archive, "\n".join(contents), "commands_with_errors.lst")
 
     def _addsignature(self, archive):
         """Add a signature to the archive.
@@ -868,9 +857,7 @@ class BackupManager(object):
 
         logging.info(signature)
 
-        sio = BytesIO(signature.encode(ENCODING))
-        fh = genfakefile(sio, "README")
-        archive.addfile(fh, sio)
+        storefakefile(archive, signature, "README")
 
     def run(self):
         """Create the archive.
