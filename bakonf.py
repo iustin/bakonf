@@ -97,12 +97,35 @@ def ensure_text(val):
         val = val.decode(ENCODING)
     return val
 
+
 def ensure_bytes(val):
     """Ensure a string/bytes/unicode object is a 'bytes' object."""
     if isinstance(val, TTYPE):
         # this is a decoded (text) value, need to encode
         val = val.encode(ENCODING)
     return val
+
+
+def genfakefile(sio=None, name=None, user='root', group='root', mtime=None):
+    """Generate a fake TarInfo object from a BytesIO object."""
+    ti = tarfile.TarInfo()
+    ti.name = name
+    ti.uname = user
+    ti.gname = group
+    ti.mtime = mtime or time.time()
+    sio.seek(0, 2)
+    ti.size = sio.tell()
+    sio.seek(0, 0)
+    return ti
+
+
+def storefakefile(archive, contents, name):
+    """Stores a string as a fake file in the archive."""
+
+    sio = BytesIO(ensure_bytes(contents))
+    ff = genfakefile(sio, name=name)
+    archive.addfile(ff, sio)
+
 
 class ConfigurationError(Exception):
     """Exception for invalid configuration files."""
@@ -912,18 +935,6 @@ class BackupManager(object):
             # Close the db now
             self.fs_manager.close()
 
-
-def genfakefile(sio=None, name = None, user='root', group='root', mtime=None):
-    """Generate a fake TarInfo object from a BytesIO object."""
-    ti = tarfile.TarInfo()
-    ti.name = name
-    ti.uname = user
-    ti.gname = group
-    ti.mtime = mtime or time.time()
-    sio.seek(0, 2)
-    ti.size = sio.tell()
-    sio.seek(0, 0)
-    return ti
 
 def real_main():
     """Main function"""
