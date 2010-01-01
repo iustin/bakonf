@@ -83,9 +83,11 @@ if sys.hexversion >= 0x03000000:
     PY3K = True
     long = int
     BTYPE = bytes
+    TTYPE = str
 else:
     PY3K = False
     BTYPE = str
+    TTYPE = unicode
 
 
 def ensure_text(val):
@@ -95,6 +97,12 @@ def ensure_text(val):
         val = val.decode(ENCODING)
     return val
 
+def ensure_bytes(val):
+    """Ensure a string/bytes/unicode object is a 'bytes' object."""
+    if isinstance(val, TTYPE):
+        # this is a decoded (text) value, need to encode
+        val = val.encode(ENCODING)
+    return val
 
 class ConfigurationError(Exception):
     """Exception for invalid configuration files."""
