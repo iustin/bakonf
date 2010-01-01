@@ -28,7 +28,7 @@ install:
 	install -d -m 0700 $(DESTDIR)/etc/bakonf/sources
 	install -d -m 0700 $(DESTDIR)/var/lib/bakonf
 	install -d -m 0700 $(DESTDIR)/var/lib/bakonf/archives
-	install -D -m 0700 bakonf $(DESTDIR)/usr/sbin/bakonf
+	install -D -m 0700 bakonf $(DESTDIR)/usr/bin/bakonf
 	install -D -m 0600 bakonf.xml $(DESTDIR)/etc/bakonf/bakonf.xml
 	install -m 0600 sources/*.xml $(DESTDIR)/etc/bakonf/sources
 	install -D -m 0644 README $(DESTDIR)/usr/share/doc/$(NAME)-$(VERSION)/README

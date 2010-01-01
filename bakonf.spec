@@ -36,7 +36,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir /etc/bakonf/sources
 %config /etc/bakonf/bakonf.xml
 %config /etc/bakonf/sources/*.xml
-/usr/sbin/bakonf
+/usr/bin/bakonf
 /var/lib/bakonf
 %doc /usr/share/doc/%{name}-%{version}
 /usr/share/man/*/*
