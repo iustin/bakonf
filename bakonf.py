@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2002, 2004, 2008, 2009, 2010 Iustin Pop
+# Copyright (C) 2002, 2004, 2008, 2009, 2010, 2014 Iustin Pop
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,19 +57,19 @@ from optparse import OptionParser
 try:
     from StringIO import StringIO as BytesIO
 except ImportError:
-    # pylint: disable-msg=F0401
+    # pylint: disable=F0401
     from io import BytesIO
 
 try:
     import bsddb
 except ImportError:
-    # pylint: disable-msg=F0401
+    # pylint: disable=F0401
     import bsddb3 as bsddb
 
 try:
     from xml.etree.ElementTree import ElementTree
 except ImportError:
-    # pylint: disable-msg=F0401
+    # pylint: disable=F0401
     from elementtree.ElementTree import ElementTree
 
 try:
@@ -80,7 +80,7 @@ except ImportError:
     from sha import new as digest_sha1
 
 if sys.hexversion >= 0x03000000:
-    # pylint: disable-msg=W0622,E0602,C0103
+    # pylint: disable=W0622,E0602,C0103
     PY3K = True
     long = int
     BTYPE = bytes
@@ -896,7 +896,7 @@ class BackupManager(object):
             kwargs = {"name": final_tar, "mode": tarmode}
             has_format = hasattr(tarfile, "GNU_FORMAT")
             if has_format:
-                # pylint: disable-msg=E1101
+                # pylint: disable=E1101
                 kwargs["format"] = tarfile.GNU_FORMAT
             tarh = tarfile.open(**kwargs)
             if not has_format:
