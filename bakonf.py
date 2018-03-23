@@ -27,6 +27,17 @@ included in the generated archive.
 
 """
 
+import sys
+import stat
+import os
+import glob
+import re
+import time
+import subprocess
+import tarfile
+import logging
+from optparse import OptionParser
+
 _COPY = ("Written by Iustin Pop\n\n"
          "Copyright (C) 2002, 2004, 2008, 2009, 2010 Iustin Pop\n"
          "This is free software; see the source for copying conditions."
@@ -41,17 +52,6 @@ ENCODING = "utf-8"
 DEFAULT_VPATH = "/var/lib/bakonf/statefile.db"
 DEFAULT_ODIR = "/var/lib/bakonf/archives"
 CMD_PREFIX = "commands"
-
-import sys
-import stat
-import os
-import glob
-import re
-import time
-import subprocess
-import tarfile
-import logging
-from optparse import OptionParser
 
 # Py 2/3 issues
 try:
@@ -243,7 +243,7 @@ class FileState(object):
         yet implemented, and return false.
 
         """
-        if type(self) != type(other):
+        if type(self) != type(other):  # pylint: disable=C0123
             return NotImplemented
         assert self.virtual != other.virtual, \
                "Comparison of two files of the same kind (%u)!" % self.virtual
