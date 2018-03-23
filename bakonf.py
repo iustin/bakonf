@@ -324,11 +324,11 @@ class FileState(object):
         """Decode the file state from a string"""
         # If the following raises ValueError, the parent must! catch it
         (name, mode, user, group, size, mtime, lnkdest, md5sum, shasum) \
-               = text.split('\0')
+            = text.split('\0')
         mode = int(mode)
         size = long(size)
         mtime = int(mtime)
-        if len(md5sum) not in  (0, 32) or len(shasum) not in (0, 40):
+        if len(md5sum) not in (0, 32) or len(shasum) not in (0, 40):
             raise ValueError("Invalid hash length!")
         # Here we should have all the data needed
         self.virtual = 1
@@ -342,6 +342,7 @@ class FileState(object):
         self.lnkdest = lnkdest
         self._md5 = md5sum
         self._sha = shasum
+
 
 class SubjectFile(object):
     """A file to be backed up"""
@@ -546,9 +547,8 @@ class FileManager(object):
         self.scanned.append(path)
         logging.debug("Examining path %s", path)
         sf = self._findfile(path)
-        if (self.maxsize > 0 and
-            sf.physical.size
-            and sf.physical.size > self.maxsize):
+        if (self.maxsize > 0 and sf.physical.size and
+            sf.physical.size > self.maxsize):
             logging.warning("Skipping path %s due to size limit (%s > %s)",
                             path, sf.physical.size, self.maxsize)
             return []
@@ -592,9 +592,9 @@ class FileManager(object):
         if base == "/":
             return
         FileManager.addparents(base, item_lst)
-        if not base in item_lst:
+        if base not in item_lst:
             item_lst.append(base)
-        if not item in item_lst:
+        if item not in item_lst:
             item_lst.append(item)
 
     addparents = staticmethod(addparents)
@@ -617,6 +617,7 @@ class FileManager(object):
         """Ensure database has been written to disc."""
 
         self.statedb.close()
+
 
 class CmdOutput(object):
     """Denotes a command result to be stored in an archive.
@@ -673,6 +674,7 @@ class CmdOutput(object):
         name = os.path.join(CMD_PREFIX, self.destination)
         storefakefile(archive, output, name)
         return nret
+
 
 class BackupManager(object):
     """Main class for this program.
@@ -803,7 +805,7 @@ class BackupManager(object):
             else:
                 arcx = os.path.join("filesystem", path)
             try:
-                if not hasattr(archive, "encoding"): # older tarfile
+                if not hasattr(archive, "encoding"):  # older tarfile
                     arcx = arcx.encode(ENCODING)
                 archive.add(name=path,
                             arcname=arcx,
@@ -813,7 +815,7 @@ class BackupManager(object):
                 errorlist.append((path, err.strerror))
                 logging.error("Cannot read '%s': '%s'. Not archived.",
                               path, err.strerror)
-            else: # Successful archiving of the member
+            else:  # Successful archiving of the member
                 donelist.append(path)
         ptime = time.time()
         logging.info("Done archiving files, %.4f seconds.", ptime - ntime)
@@ -935,7 +937,7 @@ class BackupManager(object):
 def real_main():
     """Main function"""
 
-    os.umask(63) # 0077 octal, but we write it in decimal due to py3k
+    os.umask(63)  # 0077 octal, but we write it in decimal due to py3k
     my_hostname = os.uname()[1]
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
     config_file = "/etc/bakonf/bakonf.xml"
@@ -963,11 +965,11 @@ def real_main():
                   help="specify the level of the backup: 0, 1",
                   metavar="LEVEL", default=0, type="int")
     op.add_option("-g", "--gzip", dest="compression",
-                   help="enable compression with gzip",
-                   action="store_const", const=1, default=0)
+                  help="enable compression with gzip",
+                  action="store_const", const=1, default=0)
     op.add_option("-b", "--bzip2", dest="compression",
-                   help="enable compression with bzip2",
-                   action="store_const", const=2)
+                  help="enable compression with bzip2",
+                  action="store_const", const=2)
     op.add_option("", "--no-filesystem", dest="do_files",
                   help="don't backup files",
                   action="store_false", default=1)
@@ -1004,6 +1006,7 @@ def real_main():
     bm = BackupManager(options)
     bm.run()
 
+
 def main():
     """Wrapper over real_main()."""
     try:
@@ -1011,6 +1014,7 @@ def main():
     except ConfigurationError:
         err = sys.exc_info()[1]
         logging.error(str(err))
+
 
 if __name__ == "__main__":
     main()
