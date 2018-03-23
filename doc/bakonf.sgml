@@ -4,7 +4,7 @@
     <author>
       <firstname>Iustin</firstname>
       <surname>Pop</surname>
-      <email>iusty@k1024.org</email>
+      <email>iustin@k1024.org</email>
     </author>
   </refentryinfo>
   <refmeta>
@@ -178,7 +178,7 @@
   </refsect1>
   <refsect1>
     <title>Author</title>
-    <para>Written by Iustin Pop, &lt;iusty@k1024.org&gt;</para>
+    <para>Written by Iustin Pop, &lt;iustin@k1024.org&gt;</para>
   </refsect1>
   <refsect1>
     <title>Copyright</title>
