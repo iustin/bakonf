@@ -36,7 +36,7 @@ install:
 	install -D -m 0644 bakonf.8 $(DESTDIR)/usr/share/man/man8/bakonf.8
 	install -D -m 0600 bakonf.cron $(DESTDIR)/etc/cron.d/bakonf
 
-dist: $(DOC)
+dist: lint $(DOC)
 	mkdir $(DISTDIR)
 	cp bakonf.py $(DISTDIR)/bakonf
 	cp bakonf.xml bakonf.cron $(DISTDIR)
@@ -49,6 +49,11 @@ dist: $(DOC)
 	cp README NEWS COPYING $(DISTDIR)
 	tar cvzf $(NAME)-$(VERSION).tar.gz $(DISTDIR)
 	rm -rf $(DISTDIR)
+
+.PHONY: lint
+lint:
+	pep8 bakonf.py
+	pylint bakonf.py
 
 rpm:
 	rpmbuild -ta $(NAME)-$(VERSION).tar.gz
