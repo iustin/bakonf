@@ -14,7 +14,8 @@ stores is (for Linux):
   - various /proc information
   - pci & usb device list
 
-For other os-es, you must customize the configuration files.
+For other operating systems, you must customize the configuration
+files.
 
 For more informations, see doc/usermanual.txt
 
