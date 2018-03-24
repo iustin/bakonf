@@ -52,6 +52,7 @@ ENCODING = "utf-8"
 DEFAULT_VPATH = "/var/lib/bakonf/statefile.db"
 DEFAULT_ODIR = "/var/lib/bakonf/archives"
 CMD_PREFIX = "commands"
+ROOT_TAG = "bakonf"
 
 # Py 2/3 issues
 try:
@@ -721,7 +722,7 @@ class BackupManager(object):
             for fname in glob.glob(incl.text):
                 subtree = ElementTree(file=fname)
                 subroot = subtree.getroot()
-                if subroot.tag != "bakonf":
+                if subroot.tag != ROOT_TAG:
                     continue
                 elist.append((fname, subroot))
         return elist
@@ -736,7 +737,7 @@ class BackupManager(object):
             raise ConfigurationError(filename, str(err))
 
         root = etree.getroot()
-        if root.tag != "bakonf":
+        if root.tag != ROOT_TAG:
             raise ConfigurationError(filename, "XML file root is not bakonf")
         self._cur_cfgfile = filename
         if self.options.statefile is None:
