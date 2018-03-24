@@ -45,7 +45,7 @@ _COPY = ("Written by Iustin Pop\n\n"
          "warranty; not even for MERCHANTABILITY or FITNESS"
          " FOR A PARTICULAR PURPOSE.")
 PKG_VERSION = "0.6.0"
-DB_VERSION  = "1"
+DB_VERSION = "1"
 ENCODING = "utf-8"
 
 # constants
@@ -171,9 +171,16 @@ class FileState(object):
         if 'filename' not in kwargs and 'serialdata' not in kwargs:
             raise ValueError("Invalid appelation of constructor "
                              "- give either filename or serialdata")
-        self.force = self.virtual = self._md5 = self._sha = \
-                     self.mode = self.size = self.mtime = \
-                     self.lnkdest = self.user = self.group = None
+        self.force = None
+        self.virtual = None
+        self._md5 = None
+        self._sha = None
+        self.mode = None
+        self.size = None
+        self.mtime = None
+        self.lnkdest = None
+        self.user = None
+        self.group = None
 
         if 'filename' in kwargs:
             # This means a physical file
@@ -247,7 +254,7 @@ class FileState(object):
         if type(self) != type(other):  # pylint: disable=C0123
             return NotImplemented
         assert self.virtual != other.virtual, \
-               "Comparison of two files of the same kind (%u)!" % self.virtual
+            "Comparison of two files of the same kind (%u)!" % self.virtual
         if self.force or other.force:
             return 0
         if stat.S_ISLNK(self.mode) and stat.S_ISLNK(other.mode):
@@ -549,7 +556,7 @@ class FileManager(object):
         logging.debug("Examining path %s", path)
         sf = self._findfile(path)
         if (self.maxsize > 0 and sf.physical.size and
-            sf.physical.size > self.maxsize):
+                sf.physical.size > self.maxsize):
             logging.warning("Skipping path %s due to size limit (%s > %s)",
                             path, sf.physical.size, self.maxsize)
             return []
