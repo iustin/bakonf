@@ -706,7 +706,7 @@ class BackupManager(object):
         if val is None:
             raise ConfigurationError(self._cur_cfgfile, "%s: %r" % (msg, val))
 
-    def _get_extra_sources(self, mainfile, main_tree):
+    def _get_extra_sources(self, mainfile, mainroot):
         """Helper for the _parseconf.
 
         This function scans the given DOM for top-level elements with
@@ -715,14 +715,15 @@ class BackupManager(object):
         (including the top etree).
 
         """
-        elist = [(mainfile, main_tree)]
-        for incl in main_tree.findall("/include"):
+        elist = [(mainfile, mainroot)]
+        for incl in mainroot.findall("include"):
             self._check_val(incl.text, "Invalid include directive")
             for fname in glob.glob(incl.text):
-                ctree = ElementTree(file=fname)
-                if ctree.getroot().tag != "bakonf":
+                subtree = ElementTree(file=fname)
+                subroot = subtree.getroot()
+                if subroot.tag != "bakonf":
                     continue
-                elist.append((fname, ctree))
+                elist.append((fname, subroot))
         return elist
 
     def _parseconf(self, filename):
@@ -734,11 +735,12 @@ class BackupManager(object):
             err = sys.exc_info()[1]
             raise ConfigurationError(filename, str(err))
 
-        if etree.getroot().tag != "bakonf":
+        root = etree.getroot()
+        if root.tag != "bakonf":
             raise ConfigurationError(filename, "XML file root is not bakonf")
         self._cur_cfgfile = filename
         if self.options.statefile is None:
-            vpath = etree.find("/config/statefile")
+            vpath = root.find("config/statefile")
             if vpath is None:
                 self.fs_statefile = DEFAULT_VPATH
             else:
@@ -746,7 +748,7 @@ class BackupManager(object):
         else:
             self.fs_statefile = self.options.statefile
 
-        msize = etree.find("/config/maxsize")
+        msize = root.find("config/maxsize")
         if msize is not None:
             try:
                 self.fs_maxsize = int(msize.text)
@@ -755,23 +757,23 @@ class BackupManager(object):
                 raise ConfigurationError(filename, "Invalid maxsize"
                                          " value: %s" % err)
 
-        tlist = self._get_extra_sources(filename, etree)
+        tlist = self._get_extra_sources(filename, root)
 
         # process scanning targets
         for cfile, conft in tlist:
             self._cur_cfgfile = cfile
-            for scan_path in conft.findall("/filesystem/scan"):
+            for scan_path in conft.findall("filesystem/scan"):
                 self._check_val(scan_path.text, "Invalid scan element")
                 paths = [os.path.abspath(i) for i in glob.glob(scan_path.text)]
                 self.fs_include += [ensure_text(i) for i in paths]
 
             # process noscan targets
-            for noscan_path in conft.findall("/filesystem/noscan"):
+            for noscan_path in conft.findall("filesystem/noscan"):
                 self._check_val(noscan_path.text, "Invalid noscan element")
                 self.fs_exclude.append(ensure_text(noscan_path.text))
 
             # command output
-            for cmdouts in conft.findall("/commands/storeoutput"):
+            for cmdouts in conft.findall("commands/storeoutput"):
                 cmd_line = ensure_text(cmdouts.text)
                 cmd_dest = ensure_text(cmdouts.get("destination"))
                 self._check_val(cmd_line, "Invalid storeoutput command")
