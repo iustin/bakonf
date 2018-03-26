@@ -8,3 +8,4 @@ doc/*.8
 doc/*.html
 doc/*.ps
 doc/*.pdf
+/.mypy_cache/
