@@ -1,6 +1,7 @@
-% BAKONF(8)
-%
-% March 2018
+---
+title: BAKONF(8)
+date: March 2018
+---
 
 # NAME
 
