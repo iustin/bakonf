@@ -14,7 +14,7 @@ bakonf - a configuration backup tool
 [ **-d**, **--dir**=*DIRECTORY* ]
 [ **-g**, **--gzip** | **-b**, **--bzip2** ]
 [ **--no-filesystem** | **--no-commands** ]
-**-L**, **--level**=*0|1*
+[ **-L**, **--level**=*0|1* ]
 [ **-S**, **--state-file**=*FILENAME* ]
 [ **-v**, **--verbose** … ]
 [ **-q**, **--quiet** ]
@@ -34,7 +34,7 @@ The following options are recognized:
 
 -L, --level=0|1
 
-:   this options applies to the archiving of files. If the level given
+:   This options applies to the archiving of files. If the level given
     is 0, the state database is cleared, all files which match the
     configuration options are archived, and their state is then saved in
     the state database. If the level is 1, the database is opened
@@ -49,18 +49,18 @@ The following options are recognized:
 
 -c, --config=FILENAME
 
-:   use FILENAME as configuration file, instead of the default
-    `/etc/bakonf/bakonf.xml`
+:   Use FILENAME as configuration file, instead of the default
+    `/etc/bakonf/bakonf.xml`.
 
 -f, --file=FILE
 
-:   save the generated archive as FILE. Note that if this parameter is
+:   Save the generated archive as FILE. Note that if this parameter is
     given it will override any directory given with `-d` (i.e. this name
     is taken a a full filename).
 
 -d, --dir=DIRECTORY
 
-:   save the generated archive under the given DIRECTORY. The filename
+:   Save the generated archive under the given DIRECTORY. The filename
     will be constructed using the current hostname and year, month, day
     (e.g. `host.example.com-2002-12-19.tar`). If any of the compression
     options are given, the file will have the proper suffix appended. If
@@ -73,40 +73,42 @@ The following options are recognized:
 
 -g, --gzip
 
-:   compress the generated archive with gzip
+:   Compress the generated archive with gzip; mutually exclusive with
+    the `bzip2` option.
 
 -b, --bzip2
 
-:   compress the generated archive with bzip2
+:   Compress the generated archive with bzip2; mutually exclusive with
+    the `gzip` option.
 
 --no-filesystem
 
-:   do not save any files in the filesystem. In this case bakonf does
-    not even open a database, but you must still give the `-L` option.
+:   Do not save any files in the filesystem. In this case bakonf does
+    not even open a database.
 
 --no-commands
 
-:   do not save command output in the archive
+:   Do not save command output in the archive,
 
 -v, --verbose
 
-:   increases the verbosity by one; the default level of verbosity is
+:   Increases the verbosity by one; the default level of verbosity is
     one, under which information and higher severity messages are
     displayed; at level two, debug mode is enabled which shows the trace
-    of actions
+    of actions.
 
 -q, --quiet
 
-:   resets the verbosity to zero; at this level, only warning and higher
-    messages are shown
+:   Resets the verbosity to zero; at this level, only warning and higher
+    messages are shown.
 
 --version
 
-:   shows the version number and exits
+:   Shows the version number and exits.
 
 -h, --help
 
-:   shows a short help message about the invocation and exits
+:   Shows a short help message about the invocation and exits.
 
 # AUTHORS
 
