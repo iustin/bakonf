@@ -3,7 +3,7 @@ title: bakonf user manual
 ---
 ## About this document
 
-This is the usermanual for the bakonf project, version 0.6.0; the
+This is the user manual for the bakonf project, version 0.6.0; the
 homepage is at <http://www.nongnu.org/bakonf/>. You can also get new
 versions of this document there.
 
@@ -106,19 +106,13 @@ information, I mean data which is not found anywhere in the filesystem
 as simple files: partition table layout, hardware configuration, kernel
 version, etc., but that can be gathered from shell commands output.
 
-+------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------+
 | Filename                     | Description                                                                                                                                                         | Created when                              |
-+==============================+=====================================================================================================================================================================+===========================================+
+|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
 | README                       | A file which contains informations about the archive: when it was generated, with which options and on what host                                                    | Always                                    |
-+------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------+
 | ``unarchived_files.lst``     | A file which contains details about which files couldn't be backed up; this can happen when bakonf is not run as root, or for example when it scans NFS directories | When filesystem backup has been performed |
-+--------------------+---------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------+
 | ``commands_with_errors.lst`` | A file which contains details about which commands have exited with non-zero status. Their output is still stored in the archive, though.                           | When command execution has been performed |
-+------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------+
 | ``filesystem/``              | Files backed up are stored under this path.                                                                                                                         | When filesystem backup has been performed |
-+------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------+
-| ``commands/``                | Outputs from the command exectution are stored under this path.                                                                                                     | When command execution has been performed |
-+------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------+
+| ``commands/``                | Outputs from the command execution are stored under this path.                                                                                                      | When command execution has been performed |
 
 ### Filesystem backup
 
@@ -419,23 +413,23 @@ the purpose of bakonf.
 In this case, just make sure you have the bakonf-generated archive near
 the date in the past you are interested in. If so:
 
-#. if your system uses packages/ports, compare the actual package list
+1. if your system uses packages/ports, compare the actual package list
 with the one recorded by bakonf when it created the archive
 
-#.  install/remove software as needed
+1.  install/remove software as needed
 
-#. copy the configuration files for the services you want to rollback
+1. copy the configuration files for the services you want to rollback
 over the current files
 
 #### Complete system restoration
 
 If you had a catastrophic system failure, you should follow these steps:
 
-#.  Reinstall the operating system on a clean machine. Use the given
+1.  Reinstall the operating system on a clean machine. Use the given
     information in the `/commands` directory in the archive to achieve
     an as close as possible configuration as the old system (e.g.
     partition layout, packages installed, etc.)
-#.  Copy all the files in the archive in the filesystem, overwriting the
+1.  Copy all the files in the archive in the filesystem, overwriting the
     defaults from the packages.
 
 ## Glossary
