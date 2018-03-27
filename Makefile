@@ -15,10 +15,8 @@ maintainer-clean:
 %.html: %.txt
 	rst2html $< > $@
 
-%.8: %.sgml
-	cd $$(dirname $^) && \
-	docbook2man $$(basename $^); \
-	rm -f manpage.links manpage.refs
+%.8: %.md
+	pandoc -s -t man $< > $@
 
 doc/man.html:
 	db2html doc/bakonf.sgml
