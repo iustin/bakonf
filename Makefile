@@ -12,8 +12,8 @@ all: $(DOCS)
 maintainer-clean:
 	rm -f $(DOCS)
 
-%.html: %.txt
-	rst2html $< > $@
+%.html: %.md
+	pandoc -s -t html5 --toc $< > $@
 
 %.8: %.md
 	pandoc -s -t man $< > $@
