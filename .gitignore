@@ -5,8 +5,5 @@
 # *.[oa]
 
 /docs/*.8
-/docs/*.html
-/docs/*.ps
-/docs/*.pdf
 /site/
 /.mypy_cache/
