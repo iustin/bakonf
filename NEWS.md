@@ -26,9 +26,3 @@ internal function in the tarfile module which changed its return type.
 
 Also don't store the user and group names in the virtualsdb, but always
 the IDs; this should give a speed-up for certain setups.
-
-.. vim: set textwidth=72 :
-.. Local Variables:
-.. mode: rst
-.. fill-column: 72
-.. End:
