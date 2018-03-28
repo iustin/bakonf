@@ -4,8 +4,8 @@
 # exclude patterns (uncomment them if you want to use them):
 # *.[oa]
 
-doc/*.8
-doc/*.html
-doc/*.ps
-doc/*.pdf
+/docs/*.8
+/docs/*.html
+/docs/*.ps
+/docs/*.pdf
 /.mypy_cache/
