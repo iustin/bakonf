@@ -19,7 +19,7 @@ the backing up of the system's configuration.
 The basic idea is that on a standard installation of a Unix-like system
 you have a lot of data which can be very easily restored from the
 original media, thus there is no point in archiving it. For example,
-after a fresh install of a RedHat Linux 8.0, you have \~4.5GB of space
+after a fresh install of a RedHat Linux 8.0, you have ~4.5GB of space
 used. However, only a *very* small part of this amount is holding
 important information, the other part being binaries, libraries and
 other kind of data which will never modify in normal usage. Only the

@@ -15,6 +15,6 @@ of various commands, for example:
 - various /proc information
 - pci & usb device list
 
-For more information, see doc/usermanual.txt.
+For more information, see the user manual in the doc directory.
 
 Iustin Pop, <iustin@k1024.org>
