@@ -31,17 +31,17 @@ install:
 	install -D -m 0644 bakonf.8 $(DESTDIR)/usr/share/man/man8/bakonf.8
 	install -D -m 0600 bakonf.cron $(DESTDIR)/etc/cron.d/bakonf
 
-dist: lint $(DOC)
+dist: lint $(DOCS)
 	mkdir $(DISTDIR)
 	cp bakonf.py $(DISTDIR)/bakonf
 	cp bakonf.xml bakonf.cron $(DISTDIR)
 	cp Makefile bakonf.spec $(DISTDIR)
-	mkdir $(DISTDIR)/doc
-	cp -a doc/usermanual.* $(DISTDIR)/doc/
-	cp -a doc/bakonf.* $(DISTDIR)
+	mkdir $(DISTDIR)/docs
+	cp -a docs/usermanual.* $(DISTDIR)/docs/
+	cp -a docs/bakonf.* $(DISTDIR)
 	mkdir $(DISTDIR)/sources
 	cp -a sources/*.xml $(DISTDIR)/sources
-	cp README NEWS COPYING $(DISTDIR)
+	cp README.md NEWS.md COPYING $(DISTDIR)
 	tar cvzf $(NAME)-$(VERSION).tar.gz $(DISTDIR)
 	rm -rf $(DISTDIR)
 
