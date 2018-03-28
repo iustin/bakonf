@@ -3,23 +3,20 @@ VERSION=0.6.0
 DISTDIR=$(NAME)-$(VERSION)
 
 DOCS = \
-	doc/usermanual.html \
-	doc/bakonf.8
+	docs/bakonf.8
 
-all: $(DOCS)
+all: $(DOCS) site
 
 .PHONY: maintainer-clean
 maintainer-clean:
-	rm -f $(DOCS)
+	rm -rf $(DOCS) site/
 
-%.html: %.md
-	pandoc -s -t html5 --toc $< > $@
+.PHONY: site
+site:
+	mkdocs build --strict
 
 %.8: %.md
 	pandoc -s -t man $< > $@
-
-doc/man.html:
-	db2html doc/bakonf.sgml
 
 install:
 	install -d -m 0700 $(DESTDIR)/etc/bakonf

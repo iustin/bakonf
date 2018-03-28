@@ -8,4 +8,5 @@
 /docs/*.html
 /docs/*.ps
 /docs/*.pdf
+/site/
 /.mypy_cache/

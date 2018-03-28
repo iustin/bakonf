@@ -1,0 +1,12 @@
+site_name: bakonf
+docs_dir: docs
+theme: readthedocs
+site_author: Iustin Pop
+repo_url: https://github.com/iustin/bakonf/
+pages:
+  - Home: 'index.md'
+  - User manual: 'usermanual.md'
+  - Man page: 'bakonf.md'
+  - Changelog: 'news.md'
+markdown_extensions:
+  - extra
