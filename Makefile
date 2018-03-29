@@ -52,7 +52,12 @@ lint:
 
 .PHONY: coverage
 coverage:
-	pytest-3 --cov=bakonf --cov-branch --cov-report=html
+	PYTHONPATH=. pytest-3 --cov=bakonf --cov-branch --cov-report=html tests/
+
+.PHONY: test
+test:
+	PYTHONPATH=. pytest tests/
+	PYTHONPATH=. pytest-3 tests/
 
 rpm:
 	rpmbuild -ta $(NAME)-$(VERSION).tar.gz
