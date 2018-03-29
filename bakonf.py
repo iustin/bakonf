@@ -593,6 +593,8 @@ class FileManager(object):
         """Examine the list of sources and process them."""
         for item in self.scanlist:
             if self._isexcluded(item) or item in self.scanned:
+                logging.debug("Ignoring excluded or duplicated "
+                              "top-level item %s", item)
                 continue
             st = os.lstat(item)
             if stat.S_ISDIR(st.st_mode):
