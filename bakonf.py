@@ -229,13 +229,12 @@ class FileState(object):
             try:
                 md5hash = digest_md5()
                 shahash = digest_sha1()
-                fh = open(self.name, "rb")
-                data = fh.read(65535)
-                while data:
-                    md5hash.update(data)
-                    shahash.update(data)
+                with open(self.name, "rb") as fh:
                     data = fh.read(65535)
-                fh.close()
+                    while data:
+                        md5hash.update(data)
+                        shahash.update(data)
+                        data = fh.read(65535)
                 self._md5 = md5hash.hexdigest()
                 self._sha = shahash.hexdigest()
             except IOError:
