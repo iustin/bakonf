@@ -252,7 +252,7 @@ class FileState(object):
         yet implemented, and return false.
 
         """
-        if type(self) != type(other):  # pylint: disable=C0123
+        if type(self) != type(other):  # pragma: no cover pylint: disable=C0123
             return NotImplemented
         assert self.virtual != other.virtual, \
             "Comparison of two files of the same kind (%u)!" % self.virtual
