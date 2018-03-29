@@ -59,5 +59,9 @@ test:
 	PYTHONPATH=. pytest tests/
 	PYTHONPATH=. pytest-3 tests/
 
+.PHONY: ci
+ci:
+	while inotifywait -e CLOSE_WRITE bakonf.py tests/test_bakonf.py; do make test coverage; done
+
 rpm:
 	rpmbuild -ta $(NAME)-$(VERSION).tar.gz
