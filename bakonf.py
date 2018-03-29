@@ -733,7 +733,7 @@ class BackupManager(object):
         """
         elist = [(mainfile, maincfg)]
         for incl in maincfg.get("configs", []):
-            self._check_val(incl, "Invalid include directive")
+            self._check_val(incl, "Invalid configs entry")
             logging.debug("Expanding configuration pattern '%s'", incl)
             for fname in glob.glob(incl):
                 logging.debug("Reading extra config file '%s'", fname)
@@ -779,13 +779,13 @@ class BackupManager(object):
             logging.debug("Processing config file '%s'", cfile)
             # process file system include paths
             for scan_path in conft.get("include", []):
-                self._check_val(scan_path, "Invalid scan element")
+                self._check_val(scan_path, "Invalid include entry")
                 paths = [os.path.abspath(i) for i in glob.glob(scan_path)]
                 self.fs_include += [ensure_text(i) for i in paths]
 
             # process file system exclude paths
             for noscan_path in conft.get("exclude", []):
-                self._check_val(noscan_path, "Invalid noscan element")
+                self._check_val(noscan_path, "Invalid exclude entry")
                 self.fs_exclude.append(ensure_text(noscan_path))
 
             # command output
