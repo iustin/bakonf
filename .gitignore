@@ -7,3 +7,7 @@
 /docs/*.8
 /site/
 /.mypy_cache/
+/.coverage
+/__pycache__/
+/htmlcov/
+*.pyc

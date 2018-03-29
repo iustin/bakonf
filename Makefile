@@ -50,5 +50,9 @@ lint:
 	pep8 bakonf.py
 	pylint bakonf.py
 
+.PHONY: coverage
+coverage:
+	pytest-3 --cov=bakonf --cov-branch --cov-report=html
+
 rpm:
 	rpmbuild -ta $(NAME)-$(VERSION).tar.gz
