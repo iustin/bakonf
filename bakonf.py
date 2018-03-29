@@ -345,8 +345,8 @@ class FileState(object):
         self.force = 0
         self.name = name
         self.mode = mode
-        self.user = user
-        self.group = group
+        self.user = int(user)
+        self.group = int(group)
         self.size = size
         self.mtime = mtime
         self.lnkdest = lnkdest
