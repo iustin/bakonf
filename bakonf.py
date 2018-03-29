@@ -385,7 +385,7 @@ class SubjectFile(object):
             self.force = 1
             self.virtual = None
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover (only debug)
         """Nice string version of self"""
         return ("<SubjectFile instance, virtual %s, physical %s>" %
                 (self.virtual, self.physical))
@@ -560,7 +560,9 @@ class FileManager(object):
 
     def _scanfile(self, path):
         """Examine a file for inclusion in the backup."""
-        if path in self.scanned:
+        if path in self.scanned:  # pragma: no cover
+            logging.error("Already scanned path passed to _scanfile: %s",
+                          path)
             return []
         if self._isexcluded(path):  # pragma: no cover
             logging.error("Excluded path passed to _scanfile: %s", path)
