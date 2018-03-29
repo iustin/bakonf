@@ -687,7 +687,7 @@ class CmdOutput(object):
         if status != 0:
             if status > 0:
                 err = "exited with status %i" % status
-            elif status < 0:
+            else:
                 err = "was killed with signal %i" % (-status, )
             self.errors = (self.command, err)
             nret = 0
