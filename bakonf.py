@@ -279,8 +279,8 @@ class FileState(object):
         """Reflexive function for __eq__."""
         return not self == other
 
-    def __str__(self):
-        """Return a stringified version of self, usefull for debugging."""
+    def __str__(self):  # pragma: no cover (only debug)
+        """Return a stringified version of self, useful for debugging."""
         ret = ("""<FileState instance for %s file '%s'""" %
                (self.virtual and "virtual" or "physical", self.name))
         if self.force:
