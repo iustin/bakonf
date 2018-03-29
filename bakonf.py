@@ -675,7 +675,7 @@ class CmdOutput(object):
         """Store the output of my command in the archive."""
         logging.debug("Executing command %s, storing output as %s",
                       self.command, self.destination)
-        nret = 1
+        success = True
         child = subprocess.Popen(self.command, shell=True,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
@@ -690,11 +690,11 @@ class CmdOutput(object):
             else:
                 err = "was killed with signal %i" % (-status, )
             self.errors = (self.command, err)
-            nret = 0
+            success = False
             logging.warning("'%s' %s.", self.command, err)
         name = os.path.join(CMD_PREFIX, self.destination)
         storefakefile(archive, output, name)
-        return nret
+        return success
 
 
 class BackupManager(object):
