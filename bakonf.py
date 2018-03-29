@@ -56,7 +56,7 @@ CMD_PREFIX = "commands"
 ROOT_TAG = "bakonf"
 
 # Py 2/3 issues
-try:
+try:  # pragma: no-cov
     from StringIO import StringIO as BytesIO
 except ImportError:
     # pylint: disable=F0401
@@ -68,20 +68,20 @@ except ImportError:
     # pylint: disable=F0401
     import bsddb3 as bsddb
 
-try:
+try:  # pragma: no cover
     from hashlib import md5 as digest_md5
     from hashlib import sha1 as digest_sha1
-except ImportError:
+except ImportError:  # pragma: no cover
     from md5 import new as digest_md5
     from sha import new as digest_sha1
 
-if sys.hexversion >= 0x03000000:
+if sys.hexversion >= 0x03000000:  # pragma: no cover
     # pylint: disable=W0622,E0602,C0103
     PY3K = True
     long = int
     BTYPE = bytes
     TTYPE = str
-else:
+else:  # pragma: no cover
     PY3K = False
     BTYPE = str
     TTYPE = unicode
@@ -160,10 +160,11 @@ class FileState(object):
         given data.
 
         """
-        if len(kwargs) != 1:
+        if len(kwargs) != 1:  # pragma: no cover
             raise ValueError("Invalid appelation of constructor "
                              "- give either filename or serialdata")
-        if 'filename' not in kwargs and 'serialdata' not in kwargs:
+        if 'filename' not in kwargs and \
+           'serialdata' not in kwargs:  # pragma: no cover
             raise ValueError("Invalid appelation of constructor "
                              "- give either filename or serialdata")
         self.force = None
@@ -331,7 +332,8 @@ class FileState(object):
         mode = int(mode)
         size = long(size)
         mtime = int(mtime)
-        if len(md5sum) not in (0, 32) or len(shasum) not in (0, 40):
+        if len(md5sum) not in (0, 32) or \
+           len(shasum) not in (0, 40):  # pragma: no cover
             raise ValueError("Invalid hash length!")
         # Here we should have all the data needed
         self.virtual = 1
@@ -528,7 +530,7 @@ class FileManager(object):
                 err = sys.exc_info()[1]
                 self._ehandler(err)
             else:
-                if stat.S_ISDIR(statres.st_mode):
+                if stat.S_ISDIR(statres.st_mode):  # pragma: no cover
                     logging.error("Directory passed to _helper")
                 else:
                     self._scanfile(fullpath)
@@ -555,7 +557,7 @@ class FileManager(object):
         """Examine a file for inclusion in the backup."""
         if path in self.scanned:
             return []
-        if self._isexcluded(path):
+        if self._isexcluded(path):  # pragma: no cover
             logging.error("Excluded path passed to _scanfile: %s", path)
             return []
         self.scanned.append(path)
@@ -660,7 +662,7 @@ class CmdOutput(object):
 
         """
         path = path.replace(os.path.sep, "_")
-        if os.path.altsep is not None:
+        if os.path.altsep is not None:  # pragma: no cover
             path = path.replace(os.path.altsep, "_")
         return path
 
@@ -1024,7 +1026,7 @@ def real_main():
     bm.run()
 
 
-def main():
+def main():  # pragma: no cover
     """Wrapper over real_main()."""
     try:
         real_main()
@@ -1033,5 +1035,5 @@ def main():
         logging.error(str(err))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
