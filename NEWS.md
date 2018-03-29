@@ -1,3 +1,13 @@
+Version 0.7.0
+-------------
+
+*(unreleased)*
+
+Bugs fixed:
+
+- actually show skipped files in debug mode; this was the intent all
+  along, but was not done due to a logic bug;
+
 Version 0.6.0
 -------------
 

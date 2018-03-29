@@ -525,6 +525,7 @@ class FileManager(object):
         for basename in names:
             fullpath = os.path.join(dirname, basename)
             if self._isexcluded(fullpath):
+                logging.debug("Skipping excluded path '%s'", fullpath)
                 continue
             try:
                 statres = os.lstat(fullpath)
@@ -551,7 +552,8 @@ class FileManager(object):
         if path in self.scanned:
             return []
         if self._isexcluded(path):
-            logging.debug("Skipping excluded path %s", path)
+            logging.error("Excluded path passed to _scanfile: %s", path)
+            return []
         self.scanned.append(path)
         logging.debug("Examining path %s", path)
         sf = self._findfile(path)
