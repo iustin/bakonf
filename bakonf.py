@@ -751,12 +751,13 @@ class BackupManager(object):
         """Parse the configuration file."""
 
         logging.debug("Opening configuration file '%s'", filename)
-        with open(filename) as stream:
-            try:
+        try:
+            with open(filename) as stream:
                 config = yaml.safe_load(stream)
-            except Exception:
-                err = sys.exc_info()[1]
-                raise ConfigurationError(filename, str(err))
+        except Exception:
+            err = sys.exc_info()[1]
+            raise ConfigurationError(filename,
+                                     "Error reading file: %s " % str(err))
 
         self._cur_cfgfile = filename
         if self.options.statefile is None:
