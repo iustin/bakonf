@@ -533,7 +533,9 @@ class FileManager(object):
                 err = sys.exc_info()[1]
                 self._ehandler(err)
             else:
-                if not stat.S_ISDIR(statres.st_mode):
+                if stat.S_ISDIR(statres.st_mode):
+                    logging.error("Directory passed to _helper")
+                else:
                     self._scanfile(fullpath)
         return
 
@@ -545,7 +547,7 @@ class FileManager(object):
 
         """
         for dpath, dnames, fnames in os.walk(path, onerror=self._ehandler):
-            self._helper(dpath, dnames + fnames)
+            self._helper(dpath, fnames)
 
     def _scanfile(self, path):
         """Examine a file for inclusion in the backup."""
