@@ -586,8 +586,8 @@ class FileManager(object):
         """Check to see if a path must be excluded."""
         for mo in self.excludelist:
             if mo.match(path) is not None:
-                return 1
-        return 0
+                return True
+        return False
 
     def checksources(self):
         """Examine the list of sources and process them."""
