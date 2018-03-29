@@ -321,10 +321,11 @@ maxsize
 The order of precedence for include/exclude is:
 
 -   bakonf will start scanning all items defined with 'include'.
--   if at any point in the file system scan, the current file
-    matches any one of `noscan` regexps, the scan will ignore it. For
-    directories, that means ignoring all the files they contain, so
-    please be careful about it.
+-   if at any point in the file system scan, the current file matches
+    any one of `noscan` regexps, the scan will ignore it. For
+    directories, it will prevent recursion into them, which means
+    ignoring all the files they contain, so please be careful about
+    it.
 
 Using these, you can select where you want bakonf to look for files for
 archiving. The default config file includes `/etc`, `/usr/etc`,

@@ -542,6 +542,13 @@ class FileManager(object):
 
         """
         for dpath, dnames, fnames in os.walk(path, onerror=self._ehandler):
+            for subdir in list(dnames):
+                fullpath = os.path.join(dpath, subdir)
+                if self._isexcluded(fullpath):
+                    logging.debug("Skipping recursion in "
+                                  "excluded directory '%s'",
+                                  fullpath)
+                    dnames.remove(subdir)
             self._helper(dpath, fnames)
 
     def _scanfile(self, path):
