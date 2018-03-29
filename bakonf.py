@@ -55,6 +55,8 @@ DEFAULT_VPATH = "/var/lib/bakonf/statefile.db"
 DEFAULT_ODIR = "/var/lib/bakonf/archives"
 CMD_PREFIX = "commands"
 ROOT_TAG = "bakonf"
+DBKEY_VERSION = "bakonf:db_version"
+DBKEY_DATE = "bakonf:db_date"
 
 # Py 2/3 issues
 try:  # pragma: no-cov
@@ -441,19 +443,19 @@ class FileManager(object):
         self.backuplevel = backuplevel
         self.statedb = bsddb.hashopen(statefile, mode)
         if backuplevel == 0:
-            self._dbput("bakonf:db_version", DB_VERSION)
-            self._dbput("bakonf:db_date", str(time.time()))
+            self._dbput(DBKEY_VERSION, DB_VERSION)
+            self._dbput(DBKEY_DATE, str(time.time()))
         else:
-            for check in ("bakonf:db_version", "bakonf:db_date"):
+            for check in (DBKEY_VERSION, DBKEY_DATE):
                 if not self._dbhas(check):
                     raise ConfigurationError(statefile,
                                              "Invalid database contents!")
-            currvers = self._dbget("bakonf:db_version")
+            currvers = self._dbget(DBKEY_VERSION)
             if currvers != DB_VERSION:
                 raise ConfigurationError(statefile,
                                          "Invalid database version '%s'" %
                                          currvers)
-            dbtime = float(self._dbget("bakonf:db_date"))
+            dbtime = float(self._dbget(DBKEY_DATE))
             if time.time() - dbtime > 8 * 86400:
                 logging.warning("Database is more than 8 days old!")
         return
