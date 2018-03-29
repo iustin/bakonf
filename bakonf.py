@@ -953,10 +953,9 @@ class BackupManager(object):
             self.fs_manager.close()
 
 
-def real_main():
-    """Main function"""
+def build_options():
+    """Builds the options structure"""
 
-    os.umask(63)  # 0077 octal, but we write it in decimal due to py3k
     my_hostname = os.uname()[1]
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
     config_file = "/etc/bakonf/bakonf.yml"
@@ -995,12 +994,23 @@ def real_main():
     op.add_option("", "--no-commands", dest="do_commands",
                   help="don't run and store command execution output",
                   action="store_false", default=1)
+    op.add_option("", "--archive-id", dest="archive_id",
+                  help="Informational identifier to store in "
+                  "the generated archive",
+                  default=archive_id)
     op.add_option("-v", "--verbose", dest="verbose", action="count",
                   help="be verbose in operation")
     op.add_option("-q", "--quiet", dest="verbose", action="store_const",
                   help="set verbosity to zero", const=0)
+    return op
+
+
+def real_main():  # pragma: no cover
+    """Main function"""
+
+    os.umask(63)  # 0077 octal, but we write it in decimal due to py3k
+    op = build_options()
     (options, _) = op.parse_args()
-    options.archive_id = archive_id
     if options.verbose >= 2:
         lvl = logging.DEBUG
     elif options.verbose == 1:
