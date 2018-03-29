@@ -259,7 +259,7 @@ class FileState(object):
         assert self.virtual != other.virtual, \
             "Comparison of two files of the same kind (%u)!" % self.virtual
         if self.force or other.force:
-            return 0
+            return False
         if stat.S_ISLNK(self.mode) and stat.S_ISLNK(other.mode):
             # Both files are symlinks
             return self.lnkdest == other.lnkdest and \
@@ -274,8 +274,7 @@ class FileState(object):
                    self.md5 == other.md5 and \
                    self.sha == other.sha
         else:
-            return 0
-        return 0
+            return False
 
     def __ne__(self, other):
         """Reflexive function for __eq__."""
@@ -377,7 +376,7 @@ class SubjectFile(object):
                 self.virtual = FileState(serialdata=virtualdata)
             except ValueError:
                 err = sys.exc_info()[1]
-                logging.error("Unable to serialize the file '%s': %s",
+                logging.error("Unable to de-serialise the file '%s': %s",
                               name, err)
                 self.force = 1
                 self.virtual = None
@@ -832,7 +831,8 @@ class BackupManager(object):
             else:
                 arcx = os.path.join("filesystem", path)
             try:
-                if not hasattr(archive, "encoding"):  # older tarfile
+                if not hasattr(archive, "encoding"):  # pragma: no cover
+                    # older tarfile library
                     arcx = arcx.encode(ENCODING)
                 archive.add(name=path,
                             arcname=arcx,
