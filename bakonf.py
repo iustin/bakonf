@@ -37,6 +37,7 @@ import subprocess
 import tarfile
 import logging
 from optparse import OptionParser
+import collections
 import yaml
 
 _COPY = ("Written by Iustin Pop\n\n"
@@ -85,6 +86,10 @@ else:  # pragma: no cover
     PY3K = False
     BTYPE = str
     TTYPE = unicode
+
+
+Stats = collections.namedtuple(
+    "Stats", "filename file_count file_errors cmd_count cmd_errors")
 
 
 def ensure_text(val):
@@ -841,6 +846,7 @@ class BackupManager(object):
 
         contents = ["'%s'\t'%s'" % v for v in errorlist]
         storefakefile(archive, "\n".join(contents), "unarchived_files.lst")
+        return (len(donelist), len(errorlist))
 
     def _addcommands(self, archive):
         """Add the command outputs to the archive.
@@ -859,6 +865,7 @@ class BackupManager(object):
 
         contents = ["'%s'\t'%s'\n" % v for v in errorlist]
         storefakefile(archive, "\n".join(contents), "commands_with_errors.lst")
+        return (len(self.cmd_outputs), len(errorlist))
 
     def _addsignature(self, archive):
         """Add a signature to the archive.
@@ -929,11 +936,15 @@ class BackupManager(object):
 
         # Archiving files
         if opts.do_files:
-            self._addfilesys(tarh)
+            (f_stored, f_skipped) = self._addfilesys(tarh)
+        else:
+            f_stored = f_skipped = 0
 
         # Add command output
         if opts.do_commands:
-            self._addcommands(tarh)
+            (c_stored, c_skipped) = self._addcommands(tarh)
+        else:
+            c_stored = c_skipped = 0
 
         # Add readme stuff
         self._addsignature(tarh)
@@ -951,6 +962,7 @@ class BackupManager(object):
                 self.fs_manager.notifywritten(path)
             # Close the db now
             self.fs_manager.close()
+        return Stats(final_tar, f_stored, f_skipped, c_stored, c_skipped)
 
 
 def build_options():
