@@ -24,8 +24,8 @@ install:
 	install -d -m 0700 $(DESTDIR)/var/lib/bakonf
 	install -d -m 0700 $(DESTDIR)/var/lib/bakonf/archives
 	install -D -m 0700 bakonf $(DESTDIR)/usr/bin/bakonf
-	install -D -m 0600 bakonf.xml $(DESTDIR)/etc/bakonf/bakonf.xml
-	install -m 0600 sources/*.xml $(DESTDIR)/etc/bakonf/sources
+	install -D -m 0600 bakonf.yml $(DESTDIR)/etc/bakonf/bakonf.yml
+	install -m 0600 sources/*.yml $(DESTDIR)/etc/bakonf/sources
 	install -D -m 0644 README $(DESTDIR)/usr/share/doc/$(NAME)-$(VERSION)/README
 	cp -a doc/* $(DESTDIR)/usr/share/doc/$(NAME)-$(VERSION)
 	install -D -m 0644 bakonf.8 $(DESTDIR)/usr/share/man/man8/bakonf.8
@@ -34,13 +34,13 @@ install:
 dist: lint $(DOCS)
 	mkdir $(DISTDIR)
 	cp bakonf.py $(DISTDIR)/bakonf
-	cp bakonf.xml bakonf.cron $(DISTDIR)
+	cp bakonf.yml bakonf.cron $(DISTDIR)
 	cp Makefile bakonf.spec $(DISTDIR)
 	mkdir $(DISTDIR)/docs
 	cp -a docs/usermanual.* $(DISTDIR)/docs/
 	cp -a docs/bakonf.* $(DISTDIR)
 	mkdir $(DISTDIR)/sources
-	cp -a sources/*.xml $(DISTDIR)/sources
+	cp -a sources/*.yml $(DISTDIR)/sources
 	cp README.md NEWS.md COPYING $(DISTDIR)
 	tar cvzf $(NAME)-$(VERSION).tar.gz $(DISTDIR)
 	rm -rf $(DISTDIR)

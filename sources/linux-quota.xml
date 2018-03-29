@@ -1,7 +1,0 @@
-<bakonf>
-<!-- # Configuration file for quota entries -->
-<filesystem>
-    <noscan>^.*/aquota.user$</noscan>
-    <noscan>^.*/aquota.group$</noscan>
-</filesystem>
-</bakonf>

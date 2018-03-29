@@ -34,8 +34,8 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir /etc/bakonf
 %dir /etc/bakonf/sources
-%config /etc/bakonf/bakonf.xml
-%config /etc/bakonf/sources/*.xml
+%config /etc/bakonf/bakonf.yml
+%config /etc/bakonf/conf.d/*.yml
 /usr/bin/bakonf
 /var/lib/bakonf
 %doc /usr/share/doc/%{name}-%{version}

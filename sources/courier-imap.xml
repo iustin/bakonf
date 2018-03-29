@@ -1,6 +1,0 @@
-<bakonf>
-<!-- # Configuration file for Courier IMAP -->
-<filesystem>
-    <scan>/usr/lib/courier-imap/etc</scan>
-</filesystem>
-</bakonf>

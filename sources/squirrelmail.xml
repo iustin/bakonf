@@ -1,6 +1,0 @@
-<bakonf>
-<!-- # Configuration file for squirrelmail -->
-<filesystem>
-    <scan>/var/lib/squirrelmail</scan>
-</filesystem>
-</bakonf>

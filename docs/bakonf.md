@@ -51,7 +51,7 @@ The following options are recognized:
 -c, --config=FILENAME
 
 :   Use FILENAME as configuration file, instead of the default
-    `/etc/bakonf/bakonf.xml`.
+    `/etc/bakonf/bakonf.yml`.
 
 -f, --file=FILE
 

@@ -1,0 +1,2 @@
+commands:
+- cmd: lsblk

@@ -243,87 +243,85 @@ configuration files. If you upgraded, be sure to forward you changes
 to the new config files.
 
 bakonf uses a main configuration file (by default
-`/etc/bakonf/bakonf.xml`), which does some standard settings and tells
-bakonf what other files to include. These additional files are usually
-located in `/etc/bakonf/sources` and tell bakonf how to handle some
-special cases.
+`/etc/bakonf/bakonf.yaml`), which does some standard settings and
+tells bakonf what other files to include. These additional files are
+usually located in `/etc/bakonf/sources` and tell bakonf how to handle
+some special cases.
 
 ### Configuration language
 
-The configuration file is written in XML, must be encoded in utf-8 and
-must have the document tag `bakonf`.
+The configuration file is written in YAML, and should represent an
+object (map) with the following keys:
 
-The file can contain the following tags:
+configs
+
+:   (list) tells bakonf to also parse any files which match the shell
+    patterns passed. These are files which modify bakonf's own
+    behaviour, and are usually located in /etc/bakonf/sources. These
+    are not directories to be backed up!  (Although, if modified and
+    included by the `filesystem/include` entries, they will be). Note
+    that the sub-files can contain only `filesystem` and `commands`
+    keys.
 
 include
 
-:   tells bakonf to also parse any files which match the shell pattern
-    given as the contents of the tag. These are files which modify
-    bakonf's own behaviour, and are usually located in
-    /etc/bakonf/sources. These are not directories to be backed up!
-    (Although, if modified and included by the `file system` element,
-    they will be). Note that the sub-files can contain only `file system`
-    and `commands` sections.
+:   (list) Tells bakonf to add any file or directory which matches
+    shell pattern given by the contents of the tag to its include
+    list.  These can be files or directories. Bakonf will descend
+    directories, but will **not** follow symbolic links! The symbolic
+    links are considered configuration items also, so they will be
+    backed up themselves.
 
-file system
+exclude
 
-:   Contains declarations about files to be backed up:
-
-    scan
-
-    :   Tells bakonf to add any file or directory which matches shell
-        pattern given by the contents of the tag to its include list.
-        These can be files or directories. Bakonf will descend
-        directories, but will **not** follow symbolic links! The
-        symlinks are considered configuration items also, so they will
-        be backed up themselves.
-
-        This tag must exist within the `file system` tag.
-
-    noscan
-
-    :   tells bakonf to ignore any file or directory which matches the
-        contents of the as (interpreted as a regular expression) from
-        the archive; it won't even open or analyse those files.
+:   (list) Tells bakonf to ignore any file or directory which matches
+     the contents of the elements (interpreted as a regular
+     expression) from the archive; it won't even open or stat these
+     files. Note that the patterns given are prefix matches, so for
+     example an expression `/path/to` will match (and thus exclude) a
+     file `/path/to/file`.
 
 commands
 
-:   Starts declarations about command output to be included in the
-    archive, and can contain:
+:   (list) Contains declarations about command output to be included
+    in the archive. Each element in the list is a dictionary with the
+    following keys:
 
-    storeoutput
+    cmd:
 
-    :   Tells bakonf to execute the command line (as a shell command)
-        given as the tag contents and include its output in a file under
-        the `commands` subtree in the created archive. If no
-        `destination` attribute is given, then the destination is takes
-        as the command line with slashes replaced by underscores,
-        otherwise the given path will be used. For example, the element:
+    :   Defines the command line to be executed (as a shell command).
 
-            <storeoutput
-                 destination="proc/version">cat /proc/version</storeoutput>
+    dest:
+
+    :   Defines the destination archive member to be used for the
+        output under the `commands` subtree in the created archive. If
+        this key is not given, then the destination is takes as the
+        command line with slashes replaced by underscores. For
+        example, the element:
+
+                cmd: cat /proc/version
+                path: proc/version
 
         will create a file in the archive with the name
         `commands/proc/version` which will contain the `/proc/version`
-        file.
+        file. A shortened entry of:
 
-config
+                cmd: /usr/bin/uptime
 
-:   Configuration section that modifies the behaviour of bakonf. It can
-    contain:
+        will create a file `commands/usr_bin_uptime`.
 
-    statefile
+database
 
-    :   This elements contains the filename of the state database.
+:   This elements contains the filename of the state database.
 
-    maxsize
+maxsize
 
-    :   This element denotes the maximum size of files to be backed up.
+:   This element denotes the maximum size of files to be backed up.
 
-The order of precedence for scan/noscan is:
+The order of precedence for include/exclude is:
 
--   bakonf will start scanning all items defined with scan
--   if at any point in the file system scan, the current file/directory
+-   bakonf will start scanning all items defined with 'include'.
+-   if at any point in the file system scan, the current file
     matches any one of `noscan` regexps, the scan will ignore it. For
     directories, that means ignoring all the files they contain, so
     please be careful about it.
@@ -333,59 +331,42 @@ archiving. The default config file includes `/etc`, `/usr/etc`,
 `/usr/local/etc` and some others (look in `/etc/bakonf` after
 installing).
 
-Example main configuration file (the file included in the distribution):
-
-    <bakonf>
-    <!--
-       Bakonf main configuration file. Tune to your system.
-      See also the files in the sources subdirectory (included by default)
-    -->
-    <filesystem>
-        <!-- Standard directories -->
-        <scan>/etc</scan>
-        <scan>/usr/etc</scan>
-        <scan>/usr/local/etc</scan>
-        <scan>/var/lib/alternatives</scan>
-    </filesystem>
-
-    <!-- Include by default the other configuration files -->
-    <include>/etc/bakonf/sources/*.xml</include>
-    </bakonf>
-
-Example GNU/Linux proc configuration file (included in the
+Example main configuration file (the file included in the
 distribution):
 
-    <bakonf>
-    <!--
-       File which contains hardware related informations, mostly
-       extracted from the /proc filesystem (under GNU/Linux)
-    -->
-      <commands>
-        <!-- Proc values -->
-        <storeoutput command="cat /proc/version" destination="proc/version"/>
-        <storeoutput command="cat /proc/dma" destination="proc/dma"/>
-        <storeoutput command="cat /proc/interrupts"
-                     destination="proc/interrupts"/>
-        <storeoutput command="cat /proc/ioports" destination="proc/ioports"/>
-        <storeoutput command="cat /proc/iomem" destination="proc/iomem"/>
-        <storeoutput command="cat /proc/cpuinfo" destination="proc/cpuinfo"/>
-        <storeoutput command="cat /proc/partitions"
-                     destination="proc/partitions"/>
-        <!-- Also hardware information -->
-        <storeoutput command="/sbin/lspci -vv" destination="lspci.txt"/>
-        <storeoutput command="/sbin/lsusb -vv" destination="lsusb.txt"/>
-    </commands>
-    </bakonf>
+~~~{.yaml}
+database: /var/lib/bakonf/state.db
+configs:
+- /etc/bakonf/sources/*.yaml
+include:
+- /etc
+- /usr/etc
+- /usr/local/etc
+- /var/lib/alternatives
+exclude:
+- /etc/ssl/private
+~~~
+
+Example configuration file for saving system information:
+
+~~~{.yaml}
+commands:
+- cmd: lsblk
+- cmd: sfdisk -d /dev/sda
+  path: partitions/sda
+- cmd: dpkg -l
+  path: dpkg.list
+~~~
 
 ### File list
 
 bakonf is composed of:
 
-`/etc/bakonf/bakonf.xml`
+`/etc/bakonf/bakonf.yml`
 
 :   Main configuration file.
 
-`/etc/bakonf/sources/*.xml`
+`/etc/bakonf/conf.d/*.yml`
 
 :   Configuration files for special cases (config files outside of etc
     dirs).
@@ -396,7 +377,7 @@ bakonf is composed of:
 
 `/etc/cron.d/bakonf`
 
-:   Cron file, by default it does not run bakonf, you must uncomment a
+:   Cron file, by default it does not run bakonf, you must un-comment a
     line to run it.
 
 `/var/lib/bakonf/archives`
@@ -410,7 +391,7 @@ after bakonf creates them!
 
 ### Backup phase
 
-For details about the actual parameters to bakonf, see its manpage.
+For details about the actual parameters to bakonf, see the man page.
 
 To use bakonf, choose to either:
 

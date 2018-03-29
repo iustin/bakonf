@@ -1,0 +1,10 @@
+database: /var/lib/bakonf/state.db
+configs: /etc/bakonf/conf.d/*.yml
+include:
+- /etc
+- /usr/etc
+- /usr/local/etc
+exclude: []
+maxsize: 0
+commands:
+- cmd: uptime

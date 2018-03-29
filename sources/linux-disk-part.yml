@@ -1,0 +1,3 @@
+commands:
+- cmd: /sbin/sfdisk -d /dev/sda
+  dest: partitions/sda

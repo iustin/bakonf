@@ -1,7 +1,0 @@
-<bakonf>
-<!-- Miscelaneous stuff -->
-<filesystem>
-    <noscan>^/etc/gconf</noscan>
-    <noscan>^/etc/cups/ppds.dat$</noscan>
-</filesystem>
-</bakonf>

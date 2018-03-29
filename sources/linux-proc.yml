@@ -1,0 +1,5 @@
+commands:
+- cmd: cat /proc/version
+  dest: proc/version
+- cmd: cat /proc/cpuinfo
+  dest: proc/cpuinfo

@@ -1,6 +1,0 @@
-<bakonf>
-<!-- # Configuration file for grub -->
-<filesystem>
-    <scan>/boot/grub/*.conf</scan>
-</filesystem>
-</bakonf>

@@ -37,6 +37,7 @@ import subprocess
 import tarfile
 import logging
 from optparse import OptionParser
+import yaml
 
 _COPY = ("Written by Iustin Pop\n\n"
          "Copyright (C) 2002, 2004, 2008, 2009, 2010 Iustin Pop\n"
@@ -66,12 +67,6 @@ try:
 except ImportError:
     # pylint: disable=F0401
     import bsddb3 as bsddb
-
-try:
-    from xml.etree.ElementTree import ElementTree
-except ImportError:
-    # pylint: disable=F0401
-    from elementtree.ElementTree import ElementTree
 
 try:
     from hashlib import md5 as digest_md5
@@ -718,77 +713,78 @@ class BackupManager(object):
         if val is None:
             raise ConfigurationError(self._cur_cfgfile, "%s: %r" % (msg, val))
 
-    def _get_extra_sources(self, mainfile, mainroot):
+    def _get_extra_sources(self, mainfile, maincfg):
         """Helper for the _parseconf.
 
-        This function scans the given DOM for top-level elements with
-        tagName equal to 'include' and returns the element trees for
-        the files matching shell-patern of the path attribute
-        (including the top etree).
+        This function scans the given config for a 'configs' mapping
+        and returns the loaded objects for the files matching
+        shell-pattern of the path attribute (including the given
+        configuration).
 
         """
-        elist = [(mainfile, mainroot)]
-        for incl in mainroot.findall("include"):
-            self._check_val(incl.text, "Invalid include directive")
-            for fname in glob.glob(incl.text):
-                subtree = ElementTree(file=fname)
-                subroot = subtree.getroot()
-                if subroot.tag != ROOT_TAG:
-                    continue
-                elist.append((fname, subroot))
+        elist = [(mainfile, maincfg)]
+        for incl in maincfg.get("configs", []):
+            self._check_val(incl, "Invalid include directive")
+            logging.debug("Expanding configuration pattern '%s'", incl)
+            for fname in glob.glob(incl):
+                logging.debug("Reading extra config file '%s'", fname)
+                with open(fname) as stream:
+                    subcfg = yaml.safe_load(stream)
+                elist.append((fname, subcfg))
         return elist
 
     def _parseconf(self, filename):
         """Parse the configuration file."""
 
-        try:
-            etree = ElementTree(file=filename)
-        except Exception:
-            err = sys.exc_info()[1]
-            raise ConfigurationError(filename, str(err))
+        logging.debug("Opening configuration file '%s'", filename)
+        with open(filename) as stream:
+            try:
+                config = yaml.safe_load(stream)
+            except Exception:
+                err = sys.exc_info()[1]
+                raise ConfigurationError(filename, str(err))
 
-        root = etree.getroot()
-        if root.tag != ROOT_TAG:
-            raise ConfigurationError(filename, "XML file root is not bakonf")
         self._cur_cfgfile = filename
         if self.options.statefile is None:
-            vpath = root.find("config/statefile")
+            vpath = config.get("database", None)
             if vpath is None:
                 self.fs_statefile = DEFAULT_VPATH
             else:
-                self.fs_statefile = vpath.text
+                self.fs_statefile = vpath
         else:
             self.fs_statefile = self.options.statefile
 
-        msize = root.find("config/maxsize")
+        msize = config.get("maxsize", None)
         if msize is not None:
             try:
-                self.fs_maxsize = int(msize.text)
+                self.fs_maxsize = int(msize)
             except (ValueError, TypeError):
                 err = sys.exc_info()[1]
                 raise ConfigurationError(filename, "Invalid maxsize"
                                          " value: %s" % err)
-
-        tlist = self._get_extra_sources(filename, root)
+        tlist = self._get_extra_sources(filename, config)
 
         # process scanning targets
         for cfile, conft in tlist:
             self._cur_cfgfile = cfile
-            for scan_path in conft.findall("filesystem/scan"):
-                self._check_val(scan_path.text, "Invalid scan element")
-                paths = [os.path.abspath(i) for i in glob.glob(scan_path.text)]
+            logging.debug("Processing config file '%s'", cfile)
+            # process file system include paths
+            for scan_path in conft.get("include", []):
+                self._check_val(scan_path, "Invalid scan element")
+                paths = [os.path.abspath(i) for i in glob.glob(scan_path)]
                 self.fs_include += [ensure_text(i) for i in paths]
 
-            # process noscan targets
-            for noscan_path in conft.findall("filesystem/noscan"):
-                self._check_val(noscan_path.text, "Invalid noscan element")
-                self.fs_exclude.append(ensure_text(noscan_path.text))
+            # process file system exclude paths
+            for noscan_path in conft.get("exclude", []):
+                self._check_val(noscan_path, "Invalid noscan element")
+                self.fs_exclude.append(ensure_text(noscan_path))
 
             # command output
-            for cmdouts in conft.findall("commands/storeoutput"):
-                cmd_line = ensure_text(cmdouts.text)
-                cmd_dest = ensure_text(cmdouts.get("destination"))
-                self._check_val(cmd_line, "Invalid storeoutput command")
+            commands = conft.get("commands", [])
+            for entry in commands:
+                cmd_line = ensure_text(entry.get("cmd", None))
+                cmd_dest = ensure_text(entry.get("dest", None))
+                self._check_val(cmd_line, "Invalid 'cmd' key")
                 self.cmd_outputs.append(CmdOutput(cmd_line, cmd_dest))
 
     def _addfilesys(self, archive):
@@ -954,7 +950,7 @@ def real_main():
     os.umask(63)  # 0077 octal, but we write it in decimal due to py3k
     my_hostname = os.uname()[1]
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
-    config_file = "/etc/bakonf/bakonf.xml"
+    config_file = "/etc/bakonf/bakonf.yml"
     usage = ("usage: %%prog [options]\n"
              "\n"
              "See the manpage for more informations. Defaults are:\n"

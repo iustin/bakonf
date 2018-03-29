@@ -1,7 +1,0 @@
-<bakonf>
-<!-- # Configuration files for Postgresql -->
-<filesystem>
-    <scan>/var/lib/pgsql/data/*.conf</scan>
-    <scan>/var/lib/pgsql/data/server.*</scan>
-</filesystem>
-</bakonf>
