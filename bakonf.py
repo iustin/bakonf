@@ -168,11 +168,11 @@ class FileState(object):
 
         """
         if len(kwargs) != 1:  # pragma: no cover
-            raise ValueError("Invalid appelation of constructor "
+            raise ValueError("Invalid invocation of constructor "
                              "- give either filename or serialdata")
         if 'filename' not in kwargs and \
            'serialdata' not in kwargs:  # pragma: no cover
-            raise ValueError("Invalid appelation of constructor "
+            raise ValueError("Invalid invocation of constructor "
                              "- give either filename or serialdata")
         self.force = None
         self.virtual = None
