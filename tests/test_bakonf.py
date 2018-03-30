@@ -1,12 +1,17 @@
-import unittest
+"""Tests for bakonf"""
+
 import os
 import os.path
 import collections
-import pytest
 import tarfile
 import time
+import pytest
 
 import bakonf
+
+# pylint: disable=missing-docstring
+# pylint: disable=redefined-outer-name
+# pylint: disable=invalid-name
 
 FOO = "foo"
 BAR = "bar"
@@ -53,7 +58,6 @@ class Archive(object):
     def cmd_data(self, path):
         return self.contents(self.cmdpath(path))
 
-
     def fl_data(self, sym, path):
         if sym:
             return self.link_data(path)
@@ -79,6 +83,7 @@ def env(tmpdir):
     fs = tmpdir.mkdir("fs")
     return Env(tmpdir, destdir, config, fs)
 
+
 def buildopts(env, args=None):
     if args is None:
         args = []
@@ -92,6 +97,7 @@ def buildopts(env, args=None):
 def stats_cnt(stats):
     return (stats.file_count, stats.file_errors,
             stats.cmd_count, stats.cmd_errors)
+
 
 def assert_empty(stats):
     assert stats_cnt(stats) == (0, 0, 0, 0)
@@ -140,7 +146,6 @@ def test_opts_bad_level(env):
 
 def test_opts_compression(env):
     opts = buildopts(env)
-    bm = bakonf.BackupManager(opts)
     fnames = set()
     for level in [0, 1, 2]:
         opts.compression = level
@@ -159,7 +164,7 @@ def test_bad_db_missing_key(env, monkeypatch, key):
     monkeypatch.setattr(bakonf, key, "foobar")
     bm = bakonf.BackupManager(opts)
     with pytest.raises(bakonf.ConfigurationError,
-                       match = "Invalid database contents"):
+                       match="Invalid database contents"):
         bm.run()
 
 
@@ -170,12 +175,13 @@ def test_bad_db_level(env, monkeypatch):
     monkeypatch.setattr(bakonf, "DB_VERSION", 2)
     bm = bakonf.BackupManager(opts)
     with pytest.raises(bakonf.ConfigurationError,
-                       match = "Invalid database version"):
+                       match="Invalid database version"):
         bm.run()
 
 
 def test_bad_db_old_time(env, monkeypatch, caplog):
     opts = buildopts(env)
+
     def old_time():
         return 0
     monkeypatch.setattr(time, "time", old_time)
@@ -196,7 +202,8 @@ def test_bad_db_deserialisation(env, monkeypatch):
     stats = bakonf.BackupManager(opts).run()
     assert Archive(stats).file_data(fa) == FOO
     opts.level = 1
-    def unser(s, p):
+
+    def unser(_s, _p):
         raise ValueError("mock!")
     monkeypatch.setattr(bakonf.FileState, "unserialize",
                         unser)
@@ -225,7 +232,7 @@ def test_bad_cfg(env, line, msg):
     opts = buildopts(env)
     env.config.write(line)
     with pytest.raises(bakonf.ConfigurationError, match=msg):
-        bm = bakonf.BackupManager(opts)
+        bakonf.BackupManager(opts)
 
 
 def test_cmd(env):
@@ -292,9 +299,9 @@ def test_fs_empty(env):
 
 @pytest.mark.parametrize("incfile", [True, False])
 @pytest.mark.parametrize("files", [
-    [("a", "abc") ],
+    [("a", "abc")],
     [("a", "abc"),
-     ("1", "123"),],
+     ("1", "123")],
     [("a", "abc"),
      ("1/2", "345")],
     ])
@@ -447,6 +454,7 @@ def test_fs_lstat_error(env, monkeypatch):
         f.write("include:\n- %s\n" % env.fs)
     fa = env.fs.join("a")
     fa.write(FOO)
+
     def lstat(path, up=os.lstat):
         if path == str(fa):
             raise OSError("Mock raise")
@@ -470,7 +478,7 @@ def test_fs_unreadable(env, caplog):
     stats = bm.run()
     assert stats.file_errors == 1
     assert not Archive(stats).has_file(fa)
-    assert ("Cannot read '%s'" % fa) in caplog.text
+    assert "Cannot read '%s'" % fa in caplog.text
 
 
 def test_fs_unreadable_in_l1(env, caplog):
@@ -486,7 +494,7 @@ def test_fs_unreadable_in_l1(env, caplog):
     fa.chmod(0)
     caplog.clear()
     stats = bakonf.BackupManager(opts).run()
-    assert ("Cannot read '%s'" % fa) in caplog.text
+    assert "Cannot read '%s'" % fa in caplog.text
 
 
 def test_fs_readlink_error(env, monkeypatch):
@@ -496,6 +504,7 @@ def test_fs_readlink_error(env, monkeypatch):
     fa = env.fs.join("a")
     fa.mksymlinkto(FOO)
     state = {"r": 0}
+
     def readlink(path, up=os.readlink):
         if path == str(fa):
             # This is ugly, but needed to play around tarfile...

@@ -5,6 +5,8 @@ DISTDIR=$(NAME)-$(VERSION)
 DOCS = \
 	docs/bakonf.8
 
+PY_FILES = bakonf.py tests/test_bakonf.py
+
 all: $(DOCS) site
 
 .PHONY: maintainer-clean
@@ -47,8 +49,8 @@ dist: lint $(DOCS)
 
 .PHONY: lint
 lint:
-	pep8 bakonf.py
-	pylint bakonf.py
+	pep8 $(PY_FILES)
+	pylint $(PY_FILES)
 
 .PHONY: coverage
 coverage:
