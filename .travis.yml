@@ -11,11 +11,18 @@ python:
     - "3.6"
     - "3.6-dev"
 
-# we don't need any python dependencies:
-install: pip install PyYAML pytest bsddb3
+install:
+- pip install PyYAML pytest bsddb3
+- pip install coveralls
 
-# the test command:
-script: python -m pytest tests/
+# the tests + coverage
+script:
+- python -m pytest tests/
+- python -m pytest --cov=bakonf --cov-branch tests/
+
+# upload coverage results on success
+after_success:
+- coveralls
 
 # no need for sudo access, silence notice:
 sudo: false
