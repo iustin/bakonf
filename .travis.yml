@@ -13,7 +13,7 @@ python:
 
 install:
 - pip install PyYAML pytest bsddb3
-- pip install coveralls
+- pip install pytest-cov coveralls
 
 # the tests + coverage
 script:
