@@ -7,13 +7,9 @@ python:
     - "3.5-dev"
     - "3.6"
     - "3.6-dev"
-    - "3.7-dev"
-    - "nightly"
 
 # we don't need any python dependencies:
-install:
-- pip install pytest bsddb3
-- pip install --install-option "--without-libyaml" PyYaml
+install: pip install PyYAML pytest bsddb3
 
 # the test command:
 script: python -m pytest tests/
