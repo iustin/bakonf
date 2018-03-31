@@ -4,10 +4,11 @@
 # exclude patterns (uncomment them if you want to use them):
 # *.[oa]
 
-/docs/*.8
-/site/
-/.mypy_cache/
+/.cache
 /.coverage
-/__pycache__/
+/docs/*.8
 /htmlcov/
+/.mypy_cache/
+/__pycache__/
+/site/
 *.pyc
