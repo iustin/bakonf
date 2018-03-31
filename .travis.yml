@@ -11,7 +11,9 @@ python:
     - "nightly"
 
 # we don't need any python dependencies:
-install: pip install PyYAML pytest bsddb3
+install:
+- pip install pytest bsddb3
+- pip install --install-option "--without-libyaml" PyYaml
 
 # the test command:
 script: python -m pytest tests/
