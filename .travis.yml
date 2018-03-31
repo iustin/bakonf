@@ -18,7 +18,7 @@ python:
 install: pip install PyYAML pytest bsddb3
 
 # the test command:
-script: PYTHONPATH=. pytest tests/
+script: python -m pytest tests/
 
 # no need for sudo access, silence notice:
 sudo: false
