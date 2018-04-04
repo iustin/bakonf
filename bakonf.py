@@ -959,6 +959,9 @@ class BackupManager(object):
         except EnvironmentError:
             err = sys.exc_info()[1]
             raise Error("Can't create archive '%s': %s" % (final_tar, str(err)))
+        except tarfile.CompressionError:
+            err = sys.exc_info()[1]
+            raise Error("Unexpected compression error: %s" % str(err))
 
         # Archiving files
         if opts.do_files:

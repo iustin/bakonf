@@ -173,6 +173,14 @@ def test_opts_comp_xz_fail(env, monkeypatch):
         bakonf.BackupManager(opts).run()
 
 
+def test_opts_comp_unsupported(env, monkeypatch):
+    opts = buildopts(env)
+    monkeypatch.setattr(bakonf, "COMP_GZ", "foobar")
+    opts.compression = bakonf.COMP_GZ
+    with pytest.raises(bakonf.Error, match="Unexpected compression error"):
+        bakonf.BackupManager(opts).run()
+
+
 @pytest.mark.parametrize("key", ["DBKEY_VERSION",
                                  "DBKEY_DATE"])
 def test_bad_db_missing_key(env, monkeypatch, key):
