@@ -1046,17 +1046,14 @@ def real_main():  # pragma: no cover
     logging.basicConfig(level=lvl, format="%(levelname)s: %(message)s")
 
     if not options.do_files and not options.do_commands:
-        logging.error("Nothing to backup!")
-        sys.exit(1)
+        raise Error("Nothing to backup!")
 
     if options.level is None:
-        logging.error("You must give the backup level, either 0 or 1.")
-        sys.exit(1)
+        raise Error(("You must give the backup level, either 0 or 1."))
 
     if options.level not in (0, 1):
-        logging.error("Invalid backup level %u, must be 0 or 1.",
-                      options.level)
-        sys.exit(1)
+        raise Error("Invalid backup level %u, must be 0 or 1." %
+                    options.level)
 
     bm = BackupManager(options)
     bm.run()
@@ -1069,6 +1066,7 @@ def main():  # pragma: no cover
     except Error:
         err = sys.exc_info()[1]
         logging.error(str(err))
+        sys.exit(1)
 
 
 if __name__ == "__main__":  # pragma: no cover
