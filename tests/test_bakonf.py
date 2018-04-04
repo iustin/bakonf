@@ -155,6 +155,13 @@ def test_opts_compression(env):
         fnames.add(stats.filename)
 
 
+def test_opts_bad_compression(env):
+    opts = buildopts(env)
+    opts.compression = "no-such-compression"
+    with pytest.raises(bakonf.Error, match="Unexpected compression mode"):
+        bakonf.BackupManager(opts).run()
+
+
 @pytest.mark.parametrize("key", ["DBKEY_VERSION",
                                  "DBKEY_DATE"])
 def test_bad_db_missing_key(env, monkeypatch, key):

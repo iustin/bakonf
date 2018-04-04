@@ -929,6 +929,8 @@ class BackupManager(object):
         elif compr in [COMP_GZ, COMP_BZ2]:
             tarmode = "w:" + compr
             final_tar += "." + compr
+        else:
+            raise Error("Unexpected compression mode found, please report this!")
         if opts.file is not None:
             # overrides the entire path, including any extension added above
             final_tar = os.path.abspath(opts.file)
