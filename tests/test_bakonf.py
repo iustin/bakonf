@@ -127,7 +127,7 @@ def test_opts_override_file(env):
     opts.destdir = str(env.tmpdir.join("a", "b", "out"))
     # with wrong output path, raises error
     with pytest.raises(bakonf.Error,
-                       match="Invalid target directory"):
+                       match=r"Output directory '.*' does not exist"):
         bm = bakonf.BackupManager(opts)
         assert stats_cnt(bm.run()) == (0, 0, 0, 0)
     # but works if overriden:

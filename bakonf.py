@@ -931,8 +931,10 @@ class BackupManager(object):
         if opts.file is not None:
             final_tar = os.path.abspath(opts.file)
         final_dir = os.path.dirname(final_tar)
+        if not os.path.exists(final_dir):
+            raise Error("Output directory '%s' does not exist" % final_dir)
         if not os.path.isdir(final_dir):
-            raise ConfigurationError(final_dir, "Invalid target directory")
+            raise Error("Output directory '%s' is not a directory" % final_dir)
 
         try:
             kwargs = {"name": final_tar, "mode": tarmode}
