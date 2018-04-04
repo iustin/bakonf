@@ -126,7 +126,7 @@ def test_opts_override_file(env):
     opts = buildopts(env)
     opts.destdir = str(env.tmpdir.join("a", "b", "out"))
     # with wrong output path, raises error
-    with pytest.raises(bakonf.ConfigurationError,
+    with pytest.raises(bakonf.Error,
                        match="Invalid target directory"):
         bm = bakonf.BackupManager(opts)
         assert stats_cnt(bm.run()) == (0, 0, 0, 0)
@@ -231,7 +231,7 @@ def test_extra_cfg(env):
 def test_bad_cfg(env, line, msg):
     opts = buildopts(env)
     env.config.write(line)
-    with pytest.raises(bakonf.ConfigurationError, match=msg):
+    with pytest.raises(bakonf.Error, match=msg):
         bakonf.BackupManager(opts)
 
 

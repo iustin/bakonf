@@ -131,16 +131,24 @@ def storefakefile(archive, contents, name):
     archive.addfile(ff, sio)
 
 
-class ConfigurationError(Exception):
-    """Exception for invalid configuration files."""
-    def __init__(self, filename, error):
+class Error(Exception):
+    """Basic exception type."""
+    def __init__(self, error):
         Exception.__init__(self)
-        self.filename = filename
         self.error = error
 
     def __str__(self):
-        return "ConfigurationError in file '%s': %s" % (self.filename,
-                                                        self.error)
+        return str(self.error)
+
+
+class ConfigurationError(Error):
+    """Exception for invalid configuration files."""
+    def __init__(self, filename, error):
+        Error.__init__(self, error)
+        self.filename = filename
+
+    def __str__(self):
+        return "in file '%s': %s" % (self.filename, self.error)
 
 
 class FileState(object):
@@ -1058,7 +1066,7 @@ def main():  # pragma: no cover
     """Wrapper over real_main()."""
     try:
         real_main()
-    except ConfigurationError:
+    except Error:
         err = sys.exc_info()[1]
         logging.error(str(err))
 
