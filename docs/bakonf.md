@@ -31,7 +31,7 @@ bakonf - a configuration backup tool
 Archive some parts of the filesystem and command output, as directed by
 the configuration file.
 
-The following options are recognized:
+The following options are recognised:
 
 -L, --level=0|1
 
