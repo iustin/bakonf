@@ -1067,7 +1067,9 @@ def main():  # pragma: no cover
         real_main()
     except Error:
         err = sys.exc_info()[1]
-        logging.error(str(err))
+        msg = str(err)
+        punctuation = "." if msg and msg[-1] not in "?!." else ""
+        logging.error("%s%s" % (msg, punctuation))
         sys.exit(1)
 
 
