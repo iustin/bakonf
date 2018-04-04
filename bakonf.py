@@ -60,6 +60,7 @@ DBKEY_DATE = "bakonf:db_date"
 COMP_NONE= ""
 COMP_GZ = "gz"
 COMP_BZ2 = "bz2"
+COMP_XZ = "xz"
 
 # Py 2/3 issues
 try:  # pragma: no-cov
@@ -91,6 +92,9 @@ else:  # pragma: no cover
     PY3K = False
     BTYPE = str
     TTYPE = unicode
+
+
+HAVE_LZMA = sys.hexversion >= 0x03030000
 
 
 Stats = collections.namedtuple(
@@ -924,9 +928,12 @@ class BackupManager(object):
         final_tar = os.path.join(opts.destdir, "%s-L%u.tar" %
                                  (opts.archive_id, opts.level))
         compr = opts.compression
+        if compr == COMP_XZ and not HAVE_LZMA:
+                raise Error("Your Python version does not support LZMA compression")
+
         if compr == COMP_NONE:
             tarmode = "w"
-        elif compr in [COMP_GZ, COMP_BZ2]:
+        elif compr in [COMP_GZ, COMP_BZ2, COMP_XZ]:
             tarmode = "w:" + compr
             final_tar += "." + compr
         else:
@@ -1019,6 +1026,9 @@ def build_options():
     op.add_option("-b", "--bzip2", dest="compression",
                   help="enable compression with bzip2",
                   action="store_const", const=COMP_BZ2)
+    op.add_option("-x", "--xz", dest="compression",
+                  help="enable compression with xz (lzma)",
+                  action="store_const", const=COMP_XZ)
     op.add_option("", "--no-filesystem", dest="do_files",
                   help="don't backup files",
                   action="store_false", default=1)

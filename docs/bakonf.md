@@ -13,7 +13,7 @@ bakonf - a configuration backup tool
 [ **-c**, **--config**=*FILENAME* ]
 [ **-f**, **--file**=*FILENAME* ]
 [ **-d**, **--dir**=*DIRECTORY* ]
-[ **-g**, **--gzip** | **-b**, **--bzip2** ]
+[ **-g**, **--gzip** | **-b**, **--bzip2** | **-x**, **--xz** ]
 [ **--no-filesystem** | **--no-commands** ]
 [ **-L**, **--level**=*0|1* ]
 [ **-S**, **--state-file**=*FILENAME* ]
@@ -75,12 +75,21 @@ The following options are recognized:
 -g, --gzip
 
 :   Compress the generated archive with gzip; mutually exclusive with
-    the `bzip2` option.
+    the other compression options.
 
 -b, --bzip2
 
 :   Compress the generated archive with bzip2; mutually exclusive with
-    the `gzip` option.
+    the other compression options.
+
+-x, --xz
+
+:   Compress the generated archive with xz; mutually exclusive with
+    the other compression options.
+
+    Note this is only available if you're running bakonf with at least
+    Python 3.3, as earlier versions did not support the LZMA
+    compression algorithm.
 
 --no-filesystem
 
@@ -110,6 +119,13 @@ The following options are recognized:
 -h, --help
 
 :   Shows a short help message about the invocation and exits.
+
+# NOTES
+
+Note that the for the compression options, the external command
+line tools are not used, but rather internal Python libraries. As
+such, you don't need to install for example the `bzip2` package if you
+want to use that compression method.
 
 # AUTHORS
 

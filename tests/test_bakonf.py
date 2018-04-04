@@ -147,7 +147,10 @@ def test_opts_bad_level(env):
 def test_opts_compression(env):
     opts = buildopts(env)
     fnames = set()
-    for level in [bakonf.COMP_NONE, bakonf.COMP_GZ, bakonf.COMP_BZ2]:
+    levels = [bakonf.COMP_NONE, bakonf.COMP_GZ, bakonf.COMP_BZ2]
+    if bakonf.HAVE_LZMA:
+        levels.append(bakonf.COMP_XZ)
+    for level in levels:
         opts.compression = level
         stats = bakonf.BackupManager(opts).run()
         assert_empty(stats)
@@ -159,6 +162,14 @@ def test_opts_bad_compression(env):
     opts = buildopts(env)
     opts.compression = "no-such-compression"
     with pytest.raises(bakonf.Error, match="Unexpected compression mode"):
+        bakonf.BackupManager(opts).run()
+
+
+def test_opts_comp_xz_fail(env, monkeypatch):
+    opts = buildopts(env)
+    monkeypatch.setattr(bakonf, "HAVE_LZMA", False)
+    opts.compression = bakonf.COMP_XZ
+    with pytest.raises(bakonf.Error, match="does not support LZMA"):
         bakonf.BackupManager(opts).run()
 
 
