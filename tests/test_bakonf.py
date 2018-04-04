@@ -147,7 +147,7 @@ def test_opts_bad_level(env):
 def test_opts_compression(env):
     opts = buildopts(env)
     fnames = set()
-    for level in [0, 1, 2]:
+    for level in [bakonf.COMP_NONE, bakonf.COMP_GZ, bakonf.COMP_BZ2]:
         opts.compression = level
         stats = bakonf.BackupManager(opts).run()
         assert_empty(stats)

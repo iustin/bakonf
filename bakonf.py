@@ -57,6 +57,9 @@ CMD_PREFIX = "commands"
 ROOT_TAG = "bakonf"
 DBKEY_VERSION = "bakonf:db_version"
 DBKEY_DATE = "bakonf:db_date"
+COMP_NONE= ""
+COMP_GZ = "gz"
+COMP_BZ2 = "bz2"
 
 # Py 2/3 issues
 try:  # pragma: no-cov
@@ -920,15 +923,14 @@ class BackupManager(object):
         opts = self.options
         final_tar = os.path.join(opts.destdir, "%s-L%u.tar" %
                                  (opts.archive_id, opts.level))
-        if opts.compression == 1:
-            tarmode = "w:gz"
-            final_tar += ".gz"
-        elif opts.compression == 2:
-            tarmode = "w:bz2"
-            final_tar += ".bz2"
-        else:
+        compr = opts.compression
+        if compr == COMP_NONE:
             tarmode = "w"
+        elif compr in [COMP_GZ, COMP_BZ2]:
+            tarmode = "w:" + compr
+            final_tar += "." + compr
         if opts.file is not None:
+            # overrides the entire path, including any extension added above
             final_tar = os.path.abspath(opts.file)
         final_dir = os.path.dirname(final_tar)
         if not os.path.exists(final_dir):
@@ -947,8 +949,7 @@ class BackupManager(object):
                 tarh.posix = 0
         except EnvironmentError:
             err = sys.exc_info()[1]
-            raise ConfigurationError(final_tar, "Can't create archive: %s" %
-                                     str(err))
+            raise Error("Can't create archive '%s': %s" % (final_tar, str(err)))
 
         # Archiving files
         if opts.do_files:
@@ -1012,10 +1013,10 @@ def build_options():
                   metavar="LEVEL", default=0, type="int")
     op.add_option("-g", "--gzip", dest="compression",
                   help="enable compression with gzip",
-                  action="store_const", const=1, default=0)
+                  action="store_const", const=COMP_GZ, default=COMP_NONE)
     op.add_option("-b", "--bzip2", dest="compression",
                   help="enable compression with bzip2",
-                  action="store_const", const=2)
+                  action="store_const", const=COMP_BZ2)
     op.add_option("", "--no-filesystem", dest="do_files",
                   help="don't backup files",
                   action="store_false", default=1)
