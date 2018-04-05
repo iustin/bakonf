@@ -844,10 +844,7 @@ class BackupManager(object):
         donelist = self.fs_donelist
         archive.add(name="/", arcname="filesystem/", recursive=0)
         for path in fs_list:
-            if path.startswith("/"):
-                arcx = os.path.join("filesystem", path[1:])
-            else:
-                arcx = os.path.join("filesystem", path)
+            arcx = os.path.join("filesystem", path.lstrip("/"))
             try:
                 if not hasattr(archive, "encoding"):  # pragma: no cover
                     # older tarfile library

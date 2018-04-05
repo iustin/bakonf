@@ -336,6 +336,8 @@ def test_fs_empty(env):
      ("1", "123")],
     [("a", "abc"),
      ("1/2", "345")],
+    [("a/b/c/d", "12345"),
+     ("a/b/e", "ghi")],
     ])
 def test_fs_simple(env, files, incfile):
     opts = buildopts(env)
