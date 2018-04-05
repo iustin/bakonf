@@ -948,14 +948,7 @@ class BackupManager(object):
             raise Error("Output directory '%s' is not a directory" % final_dir)
 
         try:
-            kwargs = {"name": final_tar, "mode": tarmode}
-            has_format = hasattr(tarfile, "GNU_FORMAT")
-            if has_format:
-                # pylint: disable=E1101
-                kwargs["format"] = tarfile.GNU_FORMAT
-            tarh = tarfile.open(**kwargs)
-            if not has_format:
-                tarh.posix = 0
+            tarh = tarfile.open(name=final_tar, mode=tarmode)
         except EnvironmentError:
             err = sys.exc_info()[1]
             raise Error("Can't create archive '%s': %s" % (final_tar, str(err)))
