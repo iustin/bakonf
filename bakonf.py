@@ -617,6 +617,7 @@ class FileManager(object):
                 self._scanfile(item)
         return
 
+    @staticmethod
     def addparents(item, item_lst):
         """Smartly insert a filename into a list.
 
@@ -633,8 +634,6 @@ class FileManager(object):
             item_lst.append(base)
         if item not in item_lst:
             item_lst.append(item)
-
-    addparents = staticmethod(addparents)
 
     def notifywritten(self, path):
         """Notify that a file has been archived.
