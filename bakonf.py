@@ -63,7 +63,7 @@ COMP_BZ2 = "bz2"
 COMP_XZ = "xz"
 
 # Py 2/3 issues
-try:  # pragma: no-cov
+try:  # pragma: no cover
     from StringIO import StringIO as BytesIO
 except ImportError:
     # pylint: disable=F0401
