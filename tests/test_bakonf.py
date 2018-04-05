@@ -136,6 +136,13 @@ def test_opts_override_file(env):
     assert stats_cnt(bm.run()) == (0, 0, 0, 0)
 
 
+def test_opts_bad_dir(env):
+    opts = buildopts(env)
+    opts.destdir = str(env.tmpdir.join("a").ensure())
+    with pytest.raises(bakonf.Error,
+                       match="is not a directory"):
+        bakonf.BackupManager(opts).run()
+
 def test_opts_bad_level(env):
     opts = buildopts(env)
     opts.level = 2
