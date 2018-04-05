@@ -554,6 +554,36 @@ def test_fs_readlink_error(env, monkeypatch):
     assert Archive(stats).link_data(fa) == FOO
 
 
+def test_fs_readlink_error_l1(env, monkeypatch):
+    opts = buildopts(env)
+    with env.config.open("a") as f:
+        f.write("include:\n- %s\n" % env.fs)
+    fa = env.fs.join("a")
+    fa.mksymlinkto(FOO)
+    bm = bakonf.BackupManager(opts)
+    stats = bm.run()
+    assert stats.file_errors == 0
+    assert stats.file_count > 0
+    assert Archive(stats).link_data(fa) == FOO
+
+    state = {"r": 0}
+    def readlink(path, up=os.readlink):
+        if path == str(fa):
+            # This is ugly, but needed to play around tarfile...
+            state["r"] += 1
+            if state["r"] <= 1:
+                raise OSError("Mock raise: %s" % str(fa))
+        return up(path)
+    opts.level = 1
+    bm = bakonf.BackupManager(opts)
+    monkeypatch.setattr(os, "readlink", readlink)
+    stats = bm.run()
+    # force backed up, although unchanged, and still the same link target.
+    assert stats.file_errors == 0
+    assert stats.file_count > 0
+    assert Archive(stats).link_data(fa) == FOO
+
+
 def test_fs_duplicate_includes(env):
     opts = buildopts(env)
     with env.config.open("a") as f:
