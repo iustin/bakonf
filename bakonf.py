@@ -215,8 +215,8 @@ class FileState(object):
         also read the link target.
 
         """
-        self.force = 0
-        self.virtual = 0
+        self.force = False
+        self.virtual = False
         self._md5 = None
         self._sha = None
         try:
@@ -233,7 +233,7 @@ class FileState(object):
         except (OSError, IOError):
             err = sys.exc_info()[1]
             logging.error("Cannot read: %s", err)
-            self.force = 1
+            self.force = True
 
     def _readhashes(self):
         """Compute the hashes of the file's contents."""
@@ -356,8 +356,8 @@ class FileState(object):
            len(shasum) not in (0, 40):  # pragma: no cover
             raise ValueError("Invalid hash length!")
         # Here we should have all the data needed
-        self.virtual = 1
-        self.force = 0
+        self.virtual = True
+        self.force = False
         self.name = name
         self.mode = mode
         self.user = int(user)
@@ -392,12 +392,12 @@ class SubjectFile(object):
                 err = sys.exc_info()[1]
                 logging.error("Unable to de-serialise the file '%s': %s",
                               name, err)
-                self.force = 1
+                self.force = True
                 self.virtual = None
             else:
-                self.force = 0
+                self.force = False
         else:
-            self.force = 1
+            self.force = True
             self.virtual = None
 
     def __str__(self):  # pragma: no cover (only debug)
