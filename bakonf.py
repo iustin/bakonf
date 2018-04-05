@@ -232,15 +232,16 @@ class FileState(object):
                 self.lnkdest = ""
         except (OSError, IOError):
             err = sys.exc_info()[1]
-            logging.error("Cannot read: %s", err)
+            logging.error("Cannot stat '%s', will force backup: %s", self.name, err)
             self.force = True
 
     def _readhashes(self):
         """Compute the hashes of the file's contents."""
 
-        if self.virtual:
-            return
-        if not self.force and stat.S_ISREG(self.mode):
+        if self.virtual or self.force or not stat.S_ISREG(self.mode):
+            self._md5 = ""
+            self._sha = ""
+        else:
             try:
                 md5hash = digest_md5()
                 shahash = digest_sha1()
@@ -255,9 +256,6 @@ class FileState(object):
             except IOError:
                 self._md5 = ""
                 self._sha = ""
-        else:
-            self._md5 = ""
-            self._sha = ""
 
     def __eq__(self, other):
         """Compare this entry with another one, usually for the same file.
@@ -310,11 +308,8 @@ class FileState(object):
         """Return a cached hash or force compute it."""
         val = getattr(self, kind)
         if val is None:
-            if not self.virtual and not self.force and stat.S_ISREG(self.mode):
-                self._readhashes()
-                return getattr(self, kind)
-            else:
-                return ""
+            self._readhashes()
+            return getattr(self, kind)
         else:
             return val
 
