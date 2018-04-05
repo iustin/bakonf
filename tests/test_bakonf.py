@@ -128,8 +128,7 @@ def test_opts_override_file(env):
     # with wrong output path, raises error
     with pytest.raises(bakonf.Error,
                        match=r"Output directory '.*' does not exist"):
-        bm = bakonf.BackupManager(opts)
-        assert stats_cnt(bm.run()) == (0, 0, 0, 0)
+        bakonf.BackupManager(opts).run()
     # but works if overriden:
     opts.file = str(env.tmpdir.join("a.tar"))
     bm = bakonf.BackupManager(opts)
