@@ -57,7 +57,7 @@ CMD_PREFIX = "commands"
 ROOT_TAG = "bakonf"
 DBKEY_VERSION = "bakonf:db_version"
 DBKEY_DATE = "bakonf:db_date"
-COMP_NONE= ""
+COMP_NONE = ""
 COMP_GZ = "gz"
 COMP_BZ2 = "bz2"
 COMP_XZ = "xz"
@@ -232,7 +232,8 @@ class FileState(object):
                 self.lnkdest = ""
         except (OSError, IOError):
             err = sys.exc_info()[1]
-            logging.error("Cannot stat '%s', will force backup: %s", self.name, err)
+            logging.error("Cannot stat '%s', will force backup: %s",
+                          self.name, err)
             self.force = True
 
     def _readhashes(self):
@@ -922,7 +923,7 @@ class BackupManager(object):
                                  (opts.archive_id, opts.level))
         compr = opts.compression
         if compr == COMP_XZ and not HAVE_LZMA:
-                raise Error("Your Python version does not support LZMA compression")
+            raise Error("Your Python version doesn't support LZMA compression")
 
         if compr == COMP_NONE:
             tarmode = "w"
@@ -930,7 +931,8 @@ class BackupManager(object):
             tarmode = "w:" + compr
             final_tar += "." + compr
         else:
-            raise Error("Unexpected compression mode found, please report this!")
+            raise Error("Unexpected compression mode found, "
+                        "please report this!")
         if opts.file is not None:
             # overrides the entire path, including any extension added above
             final_tar = os.path.abspath(opts.file)
@@ -944,7 +946,7 @@ class BackupManager(object):
             tarh = tarfile.open(name=final_tar, mode=tarmode)
         except EnvironmentError:
             err = sys.exc_info()[1]
-            raise Error("Can't create archive '%s': %s" % (final_tar, str(err)))
+            raise Error("Can't create archive '%s': %s" % (final_tar, err))
         except tarfile.CompressionError:
             err = sys.exc_info()[1]
             raise Error("Unexpected compression error: %s" % str(err))
@@ -1071,7 +1073,7 @@ def main():  # pragma: no cover
         err = sys.exc_info()[1]
         msg = str(err)
         punctuation = "." if msg and msg[-1] not in "?!." else ""
-        logging.error("%s%s" % (msg, punctuation))
+        logging.error("%s%s", msg, punctuation)
         sys.exit(1)
 
 

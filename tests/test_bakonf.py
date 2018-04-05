@@ -142,6 +142,7 @@ def test_opts_bad_dir(env):
                        match="is not a directory"):
         bakonf.BackupManager(opts).run()
 
+
 def test_opts_bad_level(env):
     opts = buildopts(env)
     opts.level = 2
@@ -175,7 +176,7 @@ def test_opts_comp_xz_fail(env, monkeypatch):
     opts = buildopts(env)
     monkeypatch.setattr(bakonf, "HAVE_LZMA", False)
     opts.compression = bakonf.COMP_XZ
-    with pytest.raises(bakonf.Error, match="does not support LZMA"):
+    with pytest.raises(bakonf.Error, match="doesn't support LZMA"):
         bakonf.BackupManager(opts).run()
 
 
@@ -567,6 +568,7 @@ def test_fs_readlink_error_l1(env, monkeypatch):
     assert Archive(stats).link_data(fa) == FOO
 
     state = {"r": 0}
+
     def readlink(path, up=os.readlink):
         if path == str(fa):
             # This is ugly, but needed to play around tarfile...
