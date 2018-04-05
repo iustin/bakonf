@@ -372,7 +372,7 @@ class FileState(object):
 class SubjectFile(object):
     """A file to be backed up"""
 
-    __slots__ = ('force', 'name', 'virtual', 'physical')
+    __slots__ = ('_backup', 'name', 'virtual', 'physical')
 
     def __init__(self, name, virtualdata=None):
         """Constructor for the SubjectFile.
@@ -392,12 +392,12 @@ class SubjectFile(object):
                 err = sys.exc_info()[1]
                 logging.error("Unable to de-serialise the file '%s': %s",
                               name, err)
-                self.force = True
+                self._backup = True
                 self.virtual = None
             else:
-                self.force = False
+                self._backup = self.virtual != self.physical
         else:
-            self.force = True
+            self._backup = True
             self.virtual = None
 
     def __str__(self):  # pragma: no cover (only debug)
@@ -405,9 +405,10 @@ class SubjectFile(object):
         return ("<SubjectFile instance, virtual %s, physical %s>" %
                 (self.virtual, self.physical))
 
+    @property
     def needsbackup(self):
         """Checks whether this file needs backup."""
-        return self.force or self.virtual != self.physical
+        return self._backup
 
     def serialize(self):
         """Returns a serialized state of this file."""
@@ -590,7 +591,7 @@ class FileManager(object):
             logging.warning("Skipping path %s due to size limit (%s > %s)",
                             path, sf.physical.size, self.maxsize)
             return []
-        elif sf.needsbackup():
+        elif sf.needsbackup:
             logging.debug("Selecting path %s", path)
             self.subjects[sf.name] = sf
             FileManager.addparents(path, self.filelist)
