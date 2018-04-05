@@ -65,7 +65,7 @@ COMP_XZ = "xz"
 # Py 2/3 issues
 try:  # pragma: no cover
     from StringIO import StringIO as BytesIO
-except ImportError:
+except ImportError:  # pragma: no cover
     # pylint: disable=F0401
     from io import BytesIO
 
