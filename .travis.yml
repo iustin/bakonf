@@ -24,9 +24,6 @@ script:
 after_success:
 - coveralls
 
-# no need for sudo access, silence notice:
-sudo: false
-
 # but we do need a system library:
 addons:
   apt:
