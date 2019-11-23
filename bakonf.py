@@ -85,7 +85,6 @@ except ImportError:  # pragma: no cover
 if sys.hexversion >= 0x03000000:  # pragma: no cover
     # pylint: disable=W0622,E0602,C0103
     PY3K = True
-    long = int
     BTYPE = bytes
     TTYPE = str
 else:  # pragma: no cover
@@ -346,7 +345,7 @@ class FileState(object):
         (name, mode, user, group, size, mtime, lnkdest, md5sum, shasum) \
             = text.split('\0')
         mode = int(mode)
-        size = long(size)
+        size = int(size)
         mtime = int(mtime)
         if len(md5sum) not in (0, 32) or \
            len(shasum) not in (0, 40):  # pragma: no cover
