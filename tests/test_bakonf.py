@@ -493,8 +493,7 @@ def test_fs_lstat_error(env, monkeypatch):
     def lstat(path, up=os.lstat):
         if path == str(fa):
             raise OSError("Mock raise")
-        else:
-            return up(path)
+        return up(path)
     bm = bakonf.BackupManager(opts)
     monkeypatch.setattr(os, "lstat", lstat)
     stats = bm.run()
