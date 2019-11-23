@@ -82,12 +82,6 @@ except ImportError:  # pragma: no cover
     from md5 import new as digest_md5
     from sha import new as digest_sha1
 
-if sys.hexversion >= 0x03000000:  # pragma: no cover
-    # pylint: disable=W0622,E0602,C0103
-    PY3K = True
-else:  # pragma: no cover
-    PY3K = False
-
 
 HAVE_LZMA = sys.hexversion >= 0x03030000
 
