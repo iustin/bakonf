@@ -62,7 +62,7 @@ test:
 
 .PHONY: ci
 ci:
-	while inotifywait -e CLOSE_WRITE bakonf.py tests/test_bakonf.py; do make lint test coverage; done
+	while inotifywait -e CLOSE_WRITE bakonf.py tests/test_bakonf.py; do make -k lint test coverage; done
 
 rpm:
 	rpmbuild -ta $(NAME)-$(VERSION).tar.gz
