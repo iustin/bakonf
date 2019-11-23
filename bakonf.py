@@ -85,12 +85,8 @@ except ImportError:  # pragma: no cover
 if sys.hexversion >= 0x03000000:  # pragma: no cover
     # pylint: disable=W0622,E0602,C0103
     PY3K = True
-    BTYPE = bytes
-    TTYPE = str
 else:  # pragma: no cover
     PY3K = False
-    BTYPE = str
-    TTYPE = unicode
 
 
 HAVE_LZMA = sys.hexversion >= 0x03030000
@@ -102,7 +98,7 @@ Stats = collections.namedtuple(
 
 def ensure_text(val):
     """Ensure a string/bytes/unicode object is a 'text' object."""
-    if isinstance(val, BTYPE):
+    if isinstance(val, bytes):
         # this is an encoded (bytes) value, need to decode
         val = val.decode(ENCODING)
     return val
@@ -110,7 +106,7 @@ def ensure_text(val):
 
 def ensure_bytes(val):
     """Ensure a string/bytes/unicode object is a 'bytes' object."""
-    if isinstance(val, TTYPE):
+    if isinstance(val, str):
         # this is a decoded (text) value, need to encode
         val = val.encode(ENCODING)
     return val
