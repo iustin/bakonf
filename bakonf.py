@@ -1025,7 +1025,7 @@ def build_options():
 def real_main():  # pragma: no cover
     """Main function"""
 
-    os.umask(63)  # 0077 octal, but we write it in decimal due to py3k
+    os.umask(0o077)
     op = build_options()
     (options, _) = op.parse_args()
     if options.verbose >= 2:

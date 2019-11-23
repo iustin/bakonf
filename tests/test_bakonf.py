@@ -614,7 +614,7 @@ def test_fs_relative_includes(env, monkeypatch):
 
 def test_fs_cant_write(env):
     opts = buildopts(env)
-    env.destdir.chmod(365)  # 0555 in py2, 0o555 in py3 :(
+    env.destdir.chmod(0o555)
     with pytest.raises(bakonf.Error,
                        match="Can't create archive"):
         bakonf.BackupManager(opts).run()
