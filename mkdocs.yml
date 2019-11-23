@@ -3,7 +3,7 @@ docs_dir: docs
 theme: readthedocs
 site_author: Iustin Pop
 repo_url: https://github.com/iustin/bakonf/
-pages:
+nav:
   - Home: 'index.md'
   - User manual: 'usermanual.md'
   - Man page: 'bakonf.md'
