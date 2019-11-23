@@ -54,12 +54,10 @@ lint:
 
 .PHONY: coverage
 coverage:
-	PYTHONPATH=. pytest   --cov=bakonf --cov-branch --cov-report= tests/
 	PYTHONPATH=. pytest-3 --cov=bakonf --cov-branch --cov-report=html --cov-append tests/
 
 .PHONY: test
 test:
-	PYTHONPATH=. pytest tests/
 	PYTHONPATH=. pytest-3 tests/
 
 .PHONY: ci
