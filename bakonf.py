@@ -147,7 +147,7 @@ class ConfigurationError(Error):
         return "in file '%s': %s" % (self.filename, self.error)
 
 
-class FileState(object):
+class FileState():
     """Represents the state of a file.
 
     An instance of this class represents the state of a file, either
@@ -354,7 +354,7 @@ class FileState(object):
         self._sha = shasum
 
 
-class SubjectFile(object):
+class SubjectFile():
     """A file to be backed up"""
 
     __slots__ = ('_backup', 'name', 'virtual', 'physical')
@@ -401,7 +401,7 @@ class SubjectFile(object):
         return self.physical.serialize()
 
 
-class FileManager(object):
+class FileManager():
     """Class which deals with overall issues of selecting files
     for backup.
 
@@ -641,7 +641,7 @@ class FileManager(object):
         self.statedb.close()
 
 
-class CmdOutput(object):
+class CmdOutput():
     """Denotes a command result to be stored in an archive.
 
     This class represents the element storeoutput in the configuration
@@ -698,7 +698,7 @@ class CmdOutput(object):
         return success
 
 
-class BackupManager(object):
+class BackupManager():
     """Main class for this program.
 
     Class which deals with top-level issues regarding archiving:

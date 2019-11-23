@@ -19,7 +19,7 @@ BAR = "bar"
 Env = collections.namedtuple("Env", ["tmpdir", "destdir", "config", "fs"])
 
 
-class Archive(object):
+class Archive():
     def __init__(self, stats):
         self.tar = tarfile.open(name=stats.filename, mode="r")
         self.names = self.tar.getnames()
