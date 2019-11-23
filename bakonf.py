@@ -457,7 +457,6 @@ class FileManager(object):
             dbtime = float(self._dbget(DBKEY_DATE))
             if time.time() - dbtime > 8 * 86400:
                 logging.warning("Database is more than 8 days old!")
-        return
 
     def _dbput(self, key, value):
         """Add/replace an entry in the virtuals database.
@@ -540,7 +539,6 @@ class FileManager(object):
                     logging.error("Directory passed to _helper")
                 else:
                     self._scanfile(fullpath)
-        return
 
     def _scandir(self, path):
         """Gather the files needing backup under a directory.
@@ -604,7 +602,6 @@ class FileManager(object):
                 self._scandir(item)
             else:
                 self._scanfile(item)
-        return
 
     @staticmethod
     def addparents(item, item_lst):
