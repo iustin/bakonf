@@ -966,48 +966,56 @@ See the manpage for more information. Defaults are:
     op.set_defaults(verbose=1)
     op.add_argument("--version", action="version",
                     version="%%(prog)s v%s" % (PKG_VERSION, ))
-    op.add_argument("-c", "--config-file", dest="configfile",
-                    help="configuration file (defaut: %(default)s)",
-                    metavar="FILE", default=config_file)
-    op.add_argument("-f", "--file", dest="file",
-                    help="name of the archive file to be generated "
-                    "(default: '{}-L$level.tar')".format(archive_id),
-                    metavar="ARCHIVE", default=None)
-    op.add_argument("-d", "--dir", dest="destdir",
-                    help="the directory where to store the archive "
-                    "(default: %(default)s)",
-                    metavar="DIRECTORY", default=DEFAULT_ODIR)
-    op.add_argument("-S", "--statefile", dest="statefile",
-                    help="location of the state file (overrides config file)",
-                    metavar="FILE", default=None)
-    op.add_argument("-L", "--level", dest="level",
-                    help="specify the level of the backup: 0, 1 "
-                    "(default: %(default)s)",
-                    metavar="LEVEL", default=0, type=int)
-    op.add_argument("-g", "--gzip", dest="compression",
-                    help="enable compression with gzip",
-                    action="store_const", const=COMP_GZ, default=COMP_NONE)
-    op.add_argument("-b", "--bzip2", dest="compression",
-                    help="enable compression with bzip2",
-                    action="store_const", const=COMP_BZ2)
-    op.add_argument("-x", "--xz", dest="compression",
-                    help="enable compression with xz (lzma)",
-                    action="store_const", const=COMP_XZ)
-    op.add_argument("--no-filesystem", dest="do_files",
-                    help="skip files backup",
-                    action="store_false", default=True)
-    op.add_argument("--no-commands", dest="do_commands",
-                    help="skip command execution and the storing "
-                    "of their results",
-                    action="store_false", default=True)
-    op.add_argument("--archive-id", dest="archive_id",
-                    help="informational identifier to store in "
-                    "the generated archive (default: '%(default)s')",
-                    default=archive_id)
     op.add_argument("-v", "--verbose", dest="verbose", action="count",
                     help="be verbose in operation")
     op.add_argument("-q", "--quiet", dest="verbose", action="store_const",
                     help="set verbosity to zero", const=0)
+
+    gen = op.add_argument_group(title="General configuration")
+    gen.add_argument("-c", "--config-file", dest="configfile",
+                    help="configuration file (defaut: %(default)s)",
+                    metavar="FILE", default=config_file)
+    gen.add_argument("-S", "--statefile", dest="statefile",
+                    help="location of the state file (overrides config file)",
+                    metavar="FILE", default=None)
+
+    out = op.add_argument_group(title="Archive creation/output")
+    out.add_argument("-f", "--file", dest="file",
+                     help="name of the archive file to be generated "
+                     "(default: '{}-L$level.tar')".format(archive_id),
+                     metavar="ARCHIVE", default=None)
+    out.add_argument("-d", "--dir", dest="destdir",
+                     help="the directory where to store the archive "
+                     "(default: %(default)s)",
+                     metavar="DIRECTORY", default=DEFAULT_ODIR)
+    out.add_argument("-L", "--level", dest="level",
+                     help="specify the level of the backup: 0, 1 "
+                     "(default: %(default)s)",
+                     metavar="LEVEL", default=0, type=int)
+    out.add_argument("--archive-id", dest="archive_id",
+                     help="informational identifier to store in "
+                     "the generated archive (default: '%(default)s')",
+                     default=archive_id)
+
+    comp = op.add_argument_group(title="Compression options")
+    comp.add_argument("-g", "--gzip", dest="compression",
+                      help="enable compression with gzip",
+                      action="store_const", const=COMP_GZ, default=COMP_NONE)
+    comp.add_argument("-b", "--bzip2", dest="compression",
+                      help="enable compression with bzip2",
+                      action="store_const", const=COMP_BZ2)
+    comp.add_argument("-x", "--xz", dest="compression",
+                      help="enable compression with xz (lzma)",
+                      action="store_const", const=COMP_XZ)
+
+    noact = op.add_argument_group(title="Skipping actions")
+    noact.add_argument("--no-filesystem", dest="do_files",
+                       help="skip files backup",
+                       action="store_false", default=True)
+    noact.add_argument("--no-commands", dest="do_commands",
+                       help="skip command execution and the storing "
+                       "of their results",
+                       action="store_false", default=True)
     return op
 
 
