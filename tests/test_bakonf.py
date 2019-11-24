@@ -88,7 +88,7 @@ def buildopts(env, args=None):
     if args is None:
         args = []
     op = bakonf.build_options()
-    (opts, _) = op.parse_args(args)
+    opts = op.parse_args(args)
     opts.destdir = str(env.destdir)
     opts.configfile = str(env.config)
     return opts
