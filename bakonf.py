@@ -913,11 +913,12 @@ class BackupManager():
         if opts.format:
             if opts.format not in FORMATS:
                 raise Error("Unexpected format '{}'?!".format(opts.format))
-            format = FORMATS[opts.format]
+            tar_format = FORMATS[opts.format]
         else:
-            format = tarfile.DEFAULT_FORMAT
+            tar_format = tarfile.DEFAULT_FORMAT
         try:
-            tarh = tarfile.open(name=final_tar, mode=tarmode, format=format)
+            tarh = tarfile.open(name=final_tar, mode=tarmode,
+                                format=tar_format)
         except EnvironmentError as err:
             raise Error("Can't create archive '%s': %s" % (final_tar, err))
         except tarfile.CompressionError as err:
@@ -985,11 +986,11 @@ See the manpage for more information. Defaults are:
 
     gen = op.add_argument_group(title="General configuration")
     gen.add_argument("-c", "--config-file", dest="configfile",
-                    help="configuration file (defaut: %(default)s)",
-                    metavar="FILE", default=config_file)
+                     help="configuration file (defaut: %(default)s)",
+                     metavar="FILE", default=config_file)
     gen.add_argument("-S", "--statefile", dest="statefile",
-                    help="location of the state file (overrides config file)",
-                    metavar="FILE", default=None)
+                     help="location of the state file (overrides config file)",
+                     metavar="FILE", default=None)
 
     out = op.add_argument_group(title="Archive creation/output")
     out.add_argument("-f", "--file", dest="file",
@@ -1011,7 +1012,6 @@ See the manpage for more information. Defaults are:
                      help="informational identifier to store in "
                      "the generated archive (default: '%(default)s')",
                      default=archive_id)
-
 
     comp = op.add_argument_group(title="Compression options").\
         add_mutually_exclusive_group()

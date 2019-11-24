@@ -84,7 +84,8 @@ def env(tmpdir):
     return Env(tmpdir, destdir, config, fs)
 
 
-@pytest.fixture(params=[bakonf.COMP_NONE, bakonf.COMP_GZ, bakonf.COMP_BZ2, bakonf.COMP_XZ])
+@pytest.fixture(params=[bakonf.COMP_NONE, bakonf.COMP_GZ,
+                        bakonf.COMP_BZ2, bakonf.COMP_XZ])
 def valid_compression_format(request):
     return request.param
 
@@ -628,11 +629,13 @@ def test_fs_cant_write(env):
                        match="Can't create archive"):
         bakonf.BackupManager(opts).run()
 
+
 def test_valid_format(env, valid_archive_format):
     opts = buildopts(env)
     opts.format = valid_archive_format
     bm = bakonf.BackupManager(opts)
     assert stats_cnt(bm.run()) == (0, 0, 0, 0)
+
 
 def test_invalid_format(env):
     opts = buildopts(env)
