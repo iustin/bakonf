@@ -23,7 +23,10 @@ script:
 
 # upload coverage results on success
 after_success:
-- coveralls
+- COVERALLS_PARALLEL=true coveralls
+
+notifications:
+  webhooks: https://coveralls.io/webhook
 
 # but we do need a system library:
 addons:
