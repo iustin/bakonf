@@ -84,6 +84,11 @@ def env(tmpdir):
     return Env(tmpdir, destdir, config, fs)
 
 
+@pytest.fixture(params=[bakonf.COMP_NONE, bakonf.COMP_GZ, bakonf.COMP_BZ2, bakonf.COMP_XZ])
+def valid_compression_format(request):
+    return request.param
+
+
 @pytest.fixture(scope="function", params=bakonf.FORMATS.keys())
 def valid_archive_format(request):
     return request.param
@@ -156,18 +161,17 @@ def test_opts_bad_level(env):
         bm.run()
 
 
-def test_opts_compression(env):
+def test_opts_compression(env, valid_compression_format):
+    if valid_compression_format == bakonf.COMP_XZ and not bakonf.HAVE_LZMA:
+        pytest.skip("LZMA not supported by current python")
+
     opts = buildopts(env)
     fnames = set()
-    levels = [bakonf.COMP_NONE, bakonf.COMP_GZ, bakonf.COMP_BZ2]
-    if bakonf.HAVE_LZMA:
-        levels.append(bakonf.COMP_XZ)
-    for level in levels:
-        opts.compression = level
-        stats = bakonf.BackupManager(opts).run()
-        assert_empty(stats)
-        assert stats.filename not in fnames
-        fnames.add(stats.filename)
+    opts.compression = valid_compression_format
+    stats = bakonf.BackupManager(opts).run()
+    assert_empty(stats)
+    assert stats.filename not in fnames
+    fnames.add(stats.filename)
 
 
 def test_opts_bad_compression(env):
