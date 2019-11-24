@@ -1,0 +1,6 @@
+include docs/*.md
+include docs/*.8
+include NEWS.md
+include README.md
+include tests/*.py
+include Makefile

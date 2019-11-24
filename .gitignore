@@ -11,4 +11,6 @@
 /.mypy_cache/
 /__pycache__/
 /site/
+/build/
+/bakonf.egg-info/
 *.pyc
