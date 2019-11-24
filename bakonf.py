@@ -65,13 +65,7 @@ COMP_XZ = "xz"
 from io import BytesIO
 import bsddb3
 
-try:  # pragma: no cover
-    from hashlib import md5 as digest_md5
-    from hashlib import sha1 as digest_sha1
-except ImportError:  # pragma: no cover
-    from md5 import new as digest_md5
-    from sha import new as digest_sha1
-
+import hashlib
 
 HAVE_LZMA = sys.hexversion >= 0x03030000
 
@@ -222,8 +216,8 @@ class FileState():
             self._sha = ""
         else:
             try:
-                md5hash = digest_md5()
-                shahash = digest_sha1()
+                md5hash = hashlib.md5()
+                shahash = hashlib.sha1()
                 with open(self.name, "rb") as fh:
                     data = fh.read(65535)
                     while data:
