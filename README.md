@@ -3,7 +3,7 @@
 [![Travis build status](https://img.shields.io/travis/iustin/bakonf)](https://travis-ci.org/iustin/bakonf)
 [![Coveralls status](https://img.shields.io/coveralls/github/iustin/bakonf)](https://coveralls.io/github/iustin/bakonf)
 [![Read the Docs](https://img.shields.io/readthedocs/bakonf)](http://bakonf.readthedocs.io/en/latest/?badge=latest)
-[![GitHub issues](https://img.shields.io/github/issues/iustin/pyxattr)](https://github.com/iustin/bakonf/issues)
+[![GitHub issues](https://img.shields.io/github/issues/iustin/bakonf)](https://github.com/iustin/bakonf/issues)
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/iustin/bakonf)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/iustin/bakonf)
 ![GitHub Release Date](https://img.shields.io/github/release-date/iustin/bakonf)
