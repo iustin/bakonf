@@ -5,11 +5,12 @@ cache: pip
 
 # let's test as many versions as we can!
 python:
-    - "2.7"
-    - "3.5"
-    - "3.5-dev"
-    - "3.6"
-    - "3.6-dev"
+  - "3.5"
+  - "3.6"
+  - "3.7"
+  - "3.8"
+  - "3.8-dev"  # 3.8 development branch
+  - "nightly"  # nightly build
 
 install:
 - pip install PyYAML pytest bsddb3
