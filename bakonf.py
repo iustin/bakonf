@@ -38,7 +38,11 @@ import tarfile
 import logging
 from optparse import OptionParser
 import collections
+from io import BytesIO
+import hashlib
+
 import yaml
+import bsddb3
 
 _COPY = ("Written by Iustin Pop\n\n"
          "Copyright (C) 2002, 2004, 2008, 2009, 2010 Iustin Pop\n"
@@ -61,11 +65,6 @@ COMP_NONE = ""
 COMP_GZ = "gz"
 COMP_BZ2 = "bz2"
 COMP_XZ = "xz"
-
-from io import BytesIO
-import bsddb3
-
-import hashlib
 
 HAVE_LZMA = sys.hexversion >= 0x03030000
 
