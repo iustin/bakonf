@@ -997,7 +997,8 @@ See the manpage for more information. Defaults are:
                      "the generated archive (default: '%(default)s')",
                      default=archive_id)
 
-    comp = op.add_argument_group(title="Compression options")
+    comp = op.add_argument_group(title="Compression options").\
+        add_mutually_exclusive_group()
     comp.add_argument("-g", "--gzip", dest="compression",
                       help="enable compression with gzip",
                       action="store_const", const=COMP_GZ, default=COMP_NONE)
