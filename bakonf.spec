@@ -1,16 +1,15 @@
 Summary: A configuration file backup tool
 Name: bakonf
-Version: 0.6.0
+Version: 0.7.0
 Release: 1
 License: GPL
 Vendor: Iustin Pop
 Packager: Iustin Pop <iustin@k1024.org>
 Group: Applications/System
-URL: http://www.nongnu.org/bakonf/
+URL: https://github.com/iustin/bakonf
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 BuildArch: noarch
-#Requires: python-optik tarfile
 
 %description
 bakonf is a tool designed to make backups of the configuration
@@ -43,6 +42,9 @@ rm -rf $RPM_BUILD_ROOT
 /etc/cron.d/bakonf
 
 %changelog
+* Sun Nov 24 2019 Iustin Pop <iustin@k1024.org> 0.7.0-1
+- Require Python 3
+
 * Fri Jan 01 2010 Iustin Pop <iustin@k1024.org> 0.6.0-1
 - Add compatiblity with python 3.x
 - Many changes to the configuration file format and archive layout

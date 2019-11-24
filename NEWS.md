@@ -1,7 +1,14 @@
 Version 0.7.0
 -------------
 
-*(unreleased)*
+*Sun, 24 Nov 2019*
+
+Require Python 3.5+. Python 2 has been sunset, and removing
+compatibility with it allows code simplification.
+
+New features:
+
+- allow selection of archive format (-F/--format)
 
 Bugs fixed:
 

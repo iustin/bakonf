@@ -3,9 +3,9 @@ title: bakonf user manual
 ---
 ## About this document
 
-This is the user manual for the bakonf project, version 0.6.0; the
-homepage is at <http://www.nongnu.org/bakonf/>. You can also get new
-versions of this document there.
+This is the user manual for the bakonf project, version 0.7.0; the
+homepage is at <http://github.com/iustin/bakonf/>. You can also get
+new versions of this document there.
 
 ## Introduction
 

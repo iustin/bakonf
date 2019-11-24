@@ -50,7 +50,7 @@ _COPY = ("Written by Iustin Pop\n\n"
          " There is NO\n"
          "warranty; not even for MERCHANTABILITY or FITNESS"
          " FOR A PARTICULAR PURPOSE.")
-PKG_VERSION = "0.6.0"
+PKG_VERSION = "0.7.0"
 DB_VERSION = "1"
 ENCODING = "utf-8"
 
