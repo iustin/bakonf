@@ -14,7 +14,7 @@ python:
 
 install:
 - pip install PyYAML pytest bsddb3
-- pip install pytest-cov coveralls
+- pip install pytest-cov coveralls codecov
 
 # the tests + coverage
 script:
@@ -24,6 +24,7 @@ script:
 # upload coverage results on success
 after_success:
 - COVERALLS_PARALLEL=true coveralls
+- codecov
 
 notifications:
   webhooks: https://coveralls.io/webhook
