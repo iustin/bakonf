@@ -84,6 +84,11 @@ def env(tmpdir):
     return Env(tmpdir, destdir, config, fs)
 
 
+@pytest.fixture(scope="function", params=bakonf.FORMATS.keys())
+def valid_archive_format(request):
+    return request.param
+
+
 def buildopts(env, args=None):
     if args is None:
         args = []
@@ -617,4 +622,17 @@ def test_fs_cant_write(env):
     env.destdir.chmod(0o555)
     with pytest.raises(bakonf.Error,
                        match="Can't create archive"):
+        bakonf.BackupManager(opts).run()
+
+def test_valid_format(env, valid_archive_format):
+    opts = buildopts(env)
+    opts.format = valid_archive_format
+    bm = bakonf.BackupManager(opts)
+    assert stats_cnt(bm.run()) == (0, 0, 0, 0)
+
+def test_invalid_format(env):
+    opts = buildopts(env)
+    opts.format = "foobar"
+    with pytest.raises(bakonf.Error,
+                       match="Unexpected format"):
         bakonf.BackupManager(opts).run()

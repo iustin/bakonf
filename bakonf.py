@@ -66,6 +66,12 @@ COMP_GZ = "gz"
 COMP_BZ2 = "bz2"
 COMP_XZ = "xz"
 
+FORMATS = {
+    "ustar": tarfile.USTAR_FORMAT,
+    "gnu": tarfile.GNU_FORMAT,
+    "pax": tarfile.PAX_FORMAT,
+}
+
 HAVE_LZMA = sys.hexversion >= 0x03030000
 
 
@@ -904,8 +910,14 @@ class BackupManager():
         if not os.path.isdir(final_dir):
             raise Error("Output directory '%s' is not a directory" % final_dir)
 
+        if opts.format:
+            if opts.format not in FORMATS:
+                raise Error("Unexpected format '{}'?!".format(opts.format))
+            format = FORMATS[opts.format]
+        else:
+            format = tarfile.DEFAULT_FORMAT
         try:
-            tarh = tarfile.open(name=final_tar, mode=tarmode)
+            tarh = tarfile.open(name=final_tar, mode=tarmode, format=format)
         except EnvironmentError as err:
             raise Error("Can't create archive '%s': %s" % (final_tar, err))
         except tarfile.CompressionError as err:
@@ -992,10 +1004,14 @@ See the manpage for more information. Defaults are:
                      help="specify the level of the backup: 0, 1 "
                      "(default: %(default)s)",
                      metavar="LEVEL", default=0, type=int)
+    out.add_argument("-F", "--format", dest="format",
+                     help="specify the archive format (default: gnu)",
+                     choices=FORMATS.keys())
     out.add_argument("--archive-id", dest="archive_id",
                      help="informational identifier to store in "
                      "the generated archive (default: '%(default)s')",
                      default=archive_id)
+
 
     comp = op.add_argument_group(title="Compression options").\
         add_mutually_exclusive_group()

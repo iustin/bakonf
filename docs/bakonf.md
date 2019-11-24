@@ -14,6 +14,7 @@ bakonf - a configuration backup tool
 [ **-f**, **--file**=*FILENAME* ]
 [ **-d**, **--dir**=*DIRECTORY* ]
 [ **-g**, **--gzip** | **-b**, **--bzip2** | **-x**, **--xz** ]
+[ **-F**, **--format *ustar|gnu|pax* **]
 [ **--no-filesystem** | **--no-commands** ]
 [ **-L**, **--level**=*0|1* ]
 [ **-S**, **--state-file**=*FILENAME* ]
@@ -90,6 +91,10 @@ The following options are recognised:
     Note this is only available if you're running bakonf with at least
     Python 3.3, as earlier versions did not support the LZMA
     compression algorithm.
+
+-F, --format=*ustar|gnu|pax*
+
+:   Specify the archive format. Default is *gnu*.
 
 --no-filesystem
 
