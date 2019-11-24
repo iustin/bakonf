@@ -36,7 +36,7 @@ import time
 import subprocess
 import tarfile
 import logging
-from optparse import OptionParser
+import argparse
 import collections
 from io import BytesIO
 import hashlib
@@ -948,52 +948,66 @@ def build_options():
     my_hostname = os.uname()[1]
     archive_id = "%s-%s" % (my_hostname, time.strftime("%F"))
     config_file = "/etc/bakonf/bakonf.yml"
-    usage = ("usage: %%prog [options]\n"
-             "\n"
-             "See the manpage for more informations. Defaults are:\n"
-             "  - archives will be named hostname-YYYY-MM-DD.tar\n"
-             "  - archives will be stored under %s\n" % DEFAULT_ODIR)
-    op = OptionParser(version="%%prog %s\n%s" % (PKG_VERSION, _COPY),
-                      usage=usage)
+    usage = ("""\
+Simple backup tool for small (e.g. configuration) files and program
+output (e.g. sfdisk -d /dev/sda).
+
+Program can be run either in "always back up everything" (don't pass
+-L) or in a simple incremental backup (combined -L0 and -L1 usage).
+
+See the manpage for more information. Defaults are:
+  - uncompressed archives (override by -g/-b/-x)
+  - archives will be named hostname-YYYY-MM-DD-L$level.tar
+  - archives will be stored under {}\n""".format(DEFAULT_ODIR))
+    op = argparse.ArgumentParser(
+        prog="bakonf",
+        description=usage,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     op.set_defaults(verbose=1)
-    op.add_option("-c", "--config-file", dest="configfile",
-                  help="configuration file [%s]" % config_file,
-                  metavar="FILE", default=config_file)
-    op.add_option("-f", "--file", dest="file",
-                  help="name of the archive file to be generated",
-                  metavar="ARCHIVE", default=None)
-    op.add_option("-d", "--dir", dest="destdir",
-                  help="the directory where to store the archive",
-                  metavar="DIRECTORY", default=DEFAULT_ODIR)
-    op.add_option("-S", "--statefile", dest="statefile",
-                  help="location of the state file (overrides config file)",
-                  metavar="FILE", default=None)
-    op.add_option("-L", "--level", dest="level",
-                  help="specify the level of the backup: 0, 1",
-                  metavar="LEVEL", default=0, type="int")
-    op.add_option("-g", "--gzip", dest="compression",
-                  help="enable compression with gzip",
-                  action="store_const", const=COMP_GZ, default=COMP_NONE)
-    op.add_option("-b", "--bzip2", dest="compression",
-                  help="enable compression with bzip2",
-                  action="store_const", const=COMP_BZ2)
-    op.add_option("-x", "--xz", dest="compression",
-                  help="enable compression with xz (lzma)",
-                  action="store_const", const=COMP_XZ)
-    op.add_option("", "--no-filesystem", dest="do_files",
-                  help="don't backup files",
-                  action="store_false", default=1)
-    op.add_option("", "--no-commands", dest="do_commands",
-                  help="don't run and store command execution output",
-                  action="store_false", default=1)
-    op.add_option("", "--archive-id", dest="archive_id",
-                  help="Informational identifier to store in "
-                  "the generated archive",
-                  default=archive_id)
-    op.add_option("-v", "--verbose", dest="verbose", action="count",
-                  help="be verbose in operation")
-    op.add_option("-q", "--quiet", dest="verbose", action="store_const",
-                  help="set verbosity to zero", const=0)
+    op.add_argument("--version", action="version",
+                    version="%%(prog)s v%s" % (PKG_VERSION, ))
+    op.add_argument("-c", "--config-file", dest="configfile",
+                    help="configuration file (defaut: %(default)s)",
+                    metavar="FILE", default=config_file)
+    op.add_argument("-f", "--file", dest="file",
+                    help="name of the archive file to be generated "
+                    "(default: '{}-L$level.tar')".format(archive_id),
+                    metavar="ARCHIVE", default=None)
+    op.add_argument("-d", "--dir", dest="destdir",
+                    help="the directory where to store the archive "
+                    "(default: %(default)s)",
+                    metavar="DIRECTORY", default=DEFAULT_ODIR)
+    op.add_argument("-S", "--statefile", dest="statefile",
+                    help="location of the state file (overrides config file)",
+                    metavar="FILE", default=None)
+    op.add_argument("-L", "--level", dest="level",
+                    help="specify the level of the backup: 0, 1 "
+                    "(default: %(default)s)",
+                    metavar="LEVEL", default=0, type=int)
+    op.add_argument("-g", "--gzip", dest="compression",
+                    help="enable compression with gzip",
+                    action="store_const", const=COMP_GZ, default=COMP_NONE)
+    op.add_argument("-b", "--bzip2", dest="compression",
+                    help="enable compression with bzip2",
+                    action="store_const", const=COMP_BZ2)
+    op.add_argument("-x", "--xz", dest="compression",
+                    help="enable compression with xz (lzma)",
+                    action="store_const", const=COMP_XZ)
+    op.add_argument("--no-filesystem", dest="do_files",
+                    help="skip files backup",
+                    action="store_false", default=True)
+    op.add_argument("--no-commands", dest="do_commands",
+                    help="skip command execution and the storing "
+                    "of their results",
+                    action="store_false", default=True)
+    op.add_argument("--archive-id", dest="archive_id",
+                    help="informational identifier to store in "
+                    "the generated archive (default: '%(default)s')",
+                    default=archive_id)
+    op.add_argument("-v", "--verbose", dest="verbose", action="count",
+                    help="be verbose in operation")
+    op.add_argument("-q", "--quiet", dest="verbose", action="store_const",
+                    help="set verbosity to zero", const=0)
     return op
 
 
@@ -1002,7 +1016,7 @@ def real_main():  # pragma: no cover
 
     os.umask(0o077)
     op = build_options()
-    (options, _) = op.parse_args()
+    options = op.parse_args()
     if options.verbose >= 2:
         lvl = logging.DEBUG
     elif options.verbose == 1:
