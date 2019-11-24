@@ -113,7 +113,7 @@ def test_opts_db_has_precedence(env):
     opts = buildopts(env)
     env.config.write("database: %s\n" % env.tmpdir.join("a", "b", "db"))
     # with wrong database path, raises error
-    with pytest.raises(bakonf.bsddb.db.DBNoSuchFileError):
+    with pytest.raises(bakonf.bsddb3.db.DBNoSuchFileError):
         bm = bakonf.BackupManager(opts)
         assert stats_cnt(bm.run()) == (0, 0, 0, 0)
     # but works if overriden:

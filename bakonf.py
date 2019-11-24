@@ -63,12 +63,7 @@ COMP_BZ2 = "bz2"
 COMP_XZ = "xz"
 
 from io import BytesIO
-
-try:
-    import bsddb
-except ImportError:
-    # pylint: disable=F0401
-    import bsddb3 as bsddb
+import bsddb3
 
 try:  # pragma: no cover
     from hashlib import md5 as digest_md5
@@ -435,7 +430,7 @@ class FileManager():
         else:
             raise ValueError("Unknown backup level %u" % backuplevel)
         self.backuplevel = backuplevel
-        self.statedb = bsddb.hashopen(statefile, mode)
+        self.statedb = bsddb3.hashopen(statefile, mode)
         if backuplevel == 0:
             self._dbput(DBKEY_VERSION, DB_VERSION)
             self._dbput(DBKEY_DATE, str(time.time()))
