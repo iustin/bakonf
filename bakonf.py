@@ -209,8 +209,7 @@ class FileState():
                 self.lnkdest = os.readlink(self.name)
             else:
                 self.lnkdest = ""
-        except (OSError, IOError):
-            err = sys.exc_info()[1]
+        except (OSError, IOError) as err:
             logging.error("Cannot stat '%s', will force backup: %s",
                           self.name, err)
             self.force = True
@@ -363,8 +362,7 @@ class SubjectFile():
         if virtualdata is not None:
             try:
                 self.virtual = FileState(serialdata=virtualdata)
-            except ValueError:
-                err = sys.exc_info()[1]
+            except ValueError as err:
                 logging.error("Unable to de-serialise the file '%s': %s",
                               name, err)
                 self._backup = True
@@ -521,8 +519,7 @@ class FileManager():
                 continue
             try:
                 statres = os.lstat(fullpath)
-            except OSError:
-                err = sys.exc_info()[1]
+            except OSError as err:
                 self._ehandler(err)
             else:
                 if stat.S_ISDIR(statres.st_mode):  # pragma: no cover
@@ -745,10 +742,9 @@ class BackupManager():
         try:
             with open(filename) as stream:
                 config = yaml.safe_load(stream)
-        except Exception:
-            err = sys.exc_info()[1]
+        except Exception as err:
             raise ConfigurationError(filename,
-                                     "Error reading file: %s " % str(err))
+                                     "Error reading file: %s" % str(err))
 
         self._cur_cfgfile = filename
         if self.options.statefile is None:
@@ -764,8 +760,7 @@ class BackupManager():
         if msize is not None:
             try:
                 self.fs_maxsize = int(msize)
-            except (ValueError, TypeError):
-                err = sys.exc_info()[1]
+            except (ValueError, TypeError) as err:
                 raise ConfigurationError(filename, "Invalid maxsize"
                                          " value: %s" % err)
         tlist = self._get_extra_sources(filename, config)
@@ -824,8 +819,7 @@ class BackupManager():
                 archive.add(name=path,
                             arcname=arcx,
                             recursive=0)
-            except IOError:
-                err = sys.exc_info()[1]
+            except IOError as err:
                 errorlist.append((path, err.strerror))
                 logging.error("Cannot read '%s': '%s'. Not archived.",
                               path, err.strerror)
@@ -919,11 +913,9 @@ class BackupManager():
 
         try:
             tarh = tarfile.open(name=final_tar, mode=tarmode)
-        except EnvironmentError:
-            err = sys.exc_info()[1]
+        except EnvironmentError as err:
             raise Error("Can't create archive '%s': %s" % (final_tar, err))
-        except tarfile.CompressionError:
-            err = sys.exc_info()[1]
+        except tarfile.CompressionError as err:
             raise Error("Unexpected compression error: %s" % str(err))
 
         # Archiving files
@@ -1044,8 +1036,7 @@ def main():  # pragma: no cover
     """Wrapper over real_main()."""
     try:
         real_main()
-    except Error:
-        err = sys.exc_info()[1]
+    except Error as err:
         msg = str(err)
         punctuation = "." if msg and msg[-1] not in "?!." else ""
         logging.error("%s%s", msg, punctuation)
