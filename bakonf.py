@@ -868,11 +868,11 @@ class BackupManager():
             "Level: %d" % self.options.level,
             ]
 
-        signature = "\n".join(signature) + "\n"
+        signature_str = "\n".join(signature) + "\n"
 
-        logging.info(signature)
+        logging.info(signature_str)
 
-        storefakefile(archive, signature, "README")
+        storefakefile(archive, signature_str, "README")
         storefakefile(archive, my_hostname, "host")
         storefakefile(archive, PKG_VERSION, "version")
 
