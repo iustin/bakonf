@@ -41,7 +41,7 @@ import collections
 from io import BytesIO
 import hashlib
 
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 import yaml
 import bsddb3
@@ -644,7 +644,6 @@ class CmdOutput():
         if destination is None:
             destination = self._sanitize_name(command)
         self.destination = destination.lstrip("/")
-        self.errors = None
 
     @staticmethod
     def _sanitize_name(path):
@@ -658,11 +657,11 @@ class CmdOutput():
             path = path.replace(os.path.altsep, "_")
         return path
 
-    def store(self, archive):
+    def store(self, archive) -> Optional[str]:
         """Store the output of my command in the archive."""
         logging.debug("Executing command %s, storing output as %s",
                       self.command, self.destination)
-        success = True
+        err : Optional[str] = None
         child = subprocess.Popen(self.command, shell=True,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
@@ -676,12 +675,10 @@ class CmdOutput():
                 err = "exited with status %i" % status
             else:
                 err = "was killed with signal %i" % (-status, )
-            self.errors = (self.command, err)
-            success = False
             logging.warning("'%s' %s.", self.command, err)
         name = os.path.join(CMD_PREFIX, self.destination)
         storefakefile(archive, output, name)
-        return success
+        return err
 
 
 class BackupManager():
@@ -839,8 +836,9 @@ class BackupManager():
         """
         errorlist = []
         for cmd in self.cmd_outputs:
-            if not cmd.store(archive):
-                errorlist.append(cmd.errors)
+            err = cmd.store(archive)
+            if err is not None:
+                errorlist.append((cmd.command, err))
 
         contents = ["'%s'\t'%s'\n" % v for v in errorlist]
         storefakefile(archive, "\n".join(contents), "commands_with_errors.lst")
