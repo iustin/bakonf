@@ -643,9 +643,7 @@ class CmdOutput():
         self.command = command
         if destination is None:
             destination = self._sanitize_name(command)
-        self.destination = destination
-        if self.destination.startswith("/"):
-            self.destination = self.destination[1:]
+        self.destination = destination.lstrip("/")
         self.errors = None
 
     @staticmethod
