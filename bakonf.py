@@ -41,6 +41,8 @@ import collections
 from io import BytesIO
 import hashlib
 
+from typing import List, Tuple, Dict
+
 import yaml
 import bsddb3
 
@@ -101,7 +103,7 @@ def genfakefile(sio=None, name=None, user='root', group='root', mtime=None):
     ti.name = name
     ti.uname = user
     ti.gname = group
-    ti.mtime = mtime or time.time()
+    ti.mtime = mtime or time.time() # type: ignore
     sio.seek(0, 2)
     ti.size = sio.tell()
     sio.seek(0, 0)
@@ -416,10 +418,10 @@ class FileManager():
         statefile = os.path.abspath(statefile)
         self.excludelist.append(re.compile("^%s$" % statefile))
         self.maxsize = maxsize
-        self.errorlist = []
-        self.filelist = []
-        self.subjects = {}
-        self.scanned = []
+        self.errorlist: List[Tuple[str, str]] = []
+        self.filelist: List[str] = []
+        self.subjects: Dict[str, SubjectFile] = {}
+        self.scanned: List[str] = []
         if backuplevel == 0:
             mode = "n"
         elif backuplevel == 1:
@@ -695,12 +697,12 @@ class BackupManager():
     def __init__(self, options):
         """Constructor for BackupManager."""
         self.options = options
-        self.fs_include = []
-        self.fs_exclude = []
+        self.fs_include: List[str] = []
+        self.fs_exclude: List[str] = []
         self.fs_maxsize = -1
-        self.cmd_outputs = []
+        self.cmd_outputs: List[CmdOutput] = []
         self.fs_statefile = None
-        self.fs_donelist = []
+        self.fs_donelist: List[str] = []
         self.fs_manager = None
         self._cur_cfgfile = None
         self._parseconf(options.configfile)
