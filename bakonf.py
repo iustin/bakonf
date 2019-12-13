@@ -812,9 +812,6 @@ class BackupManager():
         for path in fs_list:
             arcx = os.path.join("filesystem", path.lstrip("/"))
             try:
-                if not hasattr(archive, "encoding"):  # pragma: no cover
-                    # older tarfile library
-                    arcx = arcx.encode(ENCODING)
                 archive.add(name=path,
                             arcname=arcx,
                             recursive=0)
