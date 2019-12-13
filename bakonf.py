@@ -142,7 +142,7 @@ class FileState():
     """Represents the state of a file.
 
     An instance of this class represents the state of a file, either
-    sinteticaly given (with values from a previously-generated
+    synthetically given (with values from a previously-generated
     database) or with values read from the filesystem. If the
     attributes are not given, they will be read from filesystem at
     init time, and the checksums computed at the time of the first
