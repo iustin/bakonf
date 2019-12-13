@@ -703,7 +703,6 @@ class BackupManager():
         self.cmd_outputs: List[CmdOutput] = []
         self.fs_statefile = None
         self.fs_donelist: List[str] = []
-        self.fs_manager = None
         self._cur_cfgfile = None
         self._parseconf(options.configfile)
 
@@ -799,9 +798,9 @@ class BackupManager():
         """
         stime = time.time()
         logging.info("Scanning files...")
-        self.fs_manager = fm = FileManager(self.fs_include, self.fs_exclude,
-                                           self.fs_statefile,
-                                           self.options.level, self.fs_maxsize)
+        fm = FileManager(self.fs_include, self.fs_exclude,
+                         self.fs_statefile,
+                         self.options.level, self.fs_maxsize)
         fm.checksources()
         errorlist = list(fm.errorlist)
         fs_list = fm.filelist
@@ -828,7 +827,7 @@ class BackupManager():
 
         contents = ["'%s'\t'%s'" % v for v in errorlist]
         storefakefile(archive, "\n".join(contents), "unarchived_files.lst")
-        return (len(donelist), len(errorlist))
+        return (fm, len(donelist), len(errorlist))
 
     def _addcommands(self, archive):
         """Add the command outputs to the archive.
@@ -925,8 +924,9 @@ class BackupManager():
 
         # Archiving files
         if opts.do_files:
-            (f_stored, f_skipped) = self._addfilesys(tarh)
+            (fs_manager, f_stored, f_skipped) = self._addfilesys(tarh)
         else:
+            fs_manager = None
             f_stored = f_skipped = 0
 
         # Add command output
@@ -946,11 +946,11 @@ class BackupManager():
                      final_tar, statres.st_size)
 
         # Now update the database with the files which have been stored
-        if opts.do_files:
+        if fs_manager is not None:
             for path in self.fs_donelist:
-                self.fs_manager.notifywritten(path)
+                fs_manager.notifywritten(path)
             # Close the db now
-            self.fs_manager.close()
+            fs_manager.close()
         return Stats(final_tar, f_stored, f_skipped, c_stored, c_skipped)
 
 
