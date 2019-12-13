@@ -15,9 +15,11 @@ python:
 install:
 - pip install PyYAML pytest bsddb3
 - pip install pytest-cov coveralls codecov
+- pip install mypy
 
 # the tests + coverage
 script:
+- make mypy
 - python -m pytest tests/
 - python -m pytest --cov=bakonf --cov-branch tests/
 
