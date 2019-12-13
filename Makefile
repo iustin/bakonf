@@ -64,5 +64,9 @@ test:
 ci:
 	while inotifywait -e CLOSE_WRITE bakonf.py tests/test_bakonf.py; do make -k lint test coverage; done
 
+.PHONY: mypy
+mypy:
+	mypy --config-file mypy.ini bakonf.py
+
 rpm:
 	rpmbuild -ta $(NAME)-$(VERSION).tar.gz
