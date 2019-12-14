@@ -103,7 +103,7 @@ def genfakefile(sio=None, name=None, user='root', group='root', mtime=None):
     ti.name = name
     ti.uname = user
     ti.gname = group
-    ti.mtime = mtime or time.time() # type: ignore
+    ti.mtime = mtime or time.time()  # type: ignore
     sio.seek(0, 2)
     ti.size = sio.tell()
     sio.seek(0, 0)
@@ -120,7 +120,7 @@ def storefakefile(archive, contents, name):
 
 class Error(Exception):
     """Basic exception type."""
-    def __init__(self, error):
+    def __init__(self, error) -> None:
         Exception.__init__(self)
         self.error = error
 
@@ -172,7 +172,10 @@ class FileState():
     """
     __slots__ = ('name', 'statinfo', 'virtual', 'force', '_md5', '_sha')
 
-    def __init__(self, **kwargs):
+    _md5: Optional[str]
+    _sha: Optional[str]
+
+    def __init__(self, **kwargs) -> None:
         """Initialize the members of this instance.
 
         Either the filename or the serialdata must be given, as
@@ -197,7 +200,7 @@ class FileState():
         else:
             self.unserialize(kwargs['serialdata'])
 
-    def _readdisk(self):
+    def _readdisk(self) -> None:
         """Read the state from disk.
 
         Updates the members with values from disk (os.lstat).  For all
@@ -241,7 +244,7 @@ class FileState():
                 self._md5 = ""
                 self._sha = ""
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """Compare this entry with another one, usually for the same file.
 
         In case of symbolic links, return equal if destination,
@@ -278,11 +281,11 @@ class FileState():
         else:
             return False
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         """Reflexive function for __eq__."""
         return not self == other
 
-    def __str__(self):  # pragma: no cover (only debug)
+    def __str__(self) -> str:  # pragma: no cover (only debug)
         """Return a stringified version of self, useful for debugging."""
         ret = ("""<FileState instance for %s file '%s'""" %
                (self.virtual and "virtual" or "physical", self.name))
@@ -295,7 +298,7 @@ class FileState():
                      si.sha, si.mtime))
         return ret
 
-    def _gethash(self, kind):
+    def _gethash(self, kind) -> str:
         """Return a cached hash or force compute it."""
         val = getattr(self, kind)
         if val is None:
@@ -305,16 +308,16 @@ class FileState():
             return val
 
     @property
-    def md5(self):
+    def md5(self) -> str:
         """The MD5 hash of the file's contents."""
         return self._gethash('_md5')
 
     @property
-    def sha(self):
+    def sha(self) -> str:
         """The SHA hash of the file's contents."""
         return self._gethash('_sha')
 
-    def serialize(self):
+    def serialize(self) -> str:
         """Encode the file state as a string"""
 
         si = self.statinfo
@@ -340,7 +343,7 @@ class FileState():
 
         return out
 
-    def unserialize(self, text):
+    def unserialize(self, text) -> None:
         """Decode the file state from a string"""
         # If the following raises ValueError, the parent must! catch it
         (name, mode, user, group, size, mtime, lnkdest, md5sum, shasum) \
@@ -361,7 +364,7 @@ class FileState():
         self._sha = shasum
 
 
-class SubjectFile():
+class SubjectFile:
     """A file to be backed up"""
 
     __slots__ = ('_backup', 'name', 'virtual', 'physical')
@@ -369,7 +372,7 @@ class SubjectFile():
     physical: FileState
     virtual: Optional[FileState]
 
-    def __init__(self, name, virtualdata=None):
+    def __init__(self, name, virtualdata=None) -> None:
         """Constructor for the SubjectFile.
 
         Creates a physical member based on the given filename. If
@@ -400,17 +403,17 @@ class SubjectFile():
                 (self.virtual, self.physical))
 
     @property
-    def needsbackup(self):
+    def needsbackup(self) -> bool:
         """Checks whether this file needs backup."""
         return self._backup
 
-    def serialize(self):
+    def serialize(self) -> str:
         """Returns a serialized state of this file."""
 
         return self.physical.serialize()
 
 
-class FileManager():
+class FileManager:
     """Class which deals with overall issues of selecting files
     for backup.
 
@@ -436,7 +439,7 @@ class FileManager():
         self.scanlist = scanlist
         self.excludelist = list(map(re.compile, excludelist))
         statefile = os.path.abspath(statefile)
-        self.excludelist.append(re.compile("^%s$" % statefile)) # type: ignore
+        self.excludelist.append(re.compile("^%s$" % statefile))  # type: ignore
         self.maxsize = maxsize
         self.errorlist: List[Tuple[str, str]] = []
         self.filelist: List[str] = []
@@ -683,7 +686,7 @@ class CmdOutput():
         """Store the output of my command in the archive."""
         logging.debug("Executing command %s, storing output as %s",
                       self.command, self.destination)
-        err : Optional[str] = None
+        err: Optional[str] = None
         child = subprocess.Popen(self.command, shell=True,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
