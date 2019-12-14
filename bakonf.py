@@ -424,7 +424,7 @@ class FileManager:
                  'filelist', 'memberlist', 'maxsize')
 
     def __init__(self, scanlist, excludelist, statefile, backuplevel,
-                 maxsize):
+                 maxsize) -> None:
         """Constructor for class FileManager."""
         self.scanlist = scanlist
         self.excludelist = list(map(re.compile, excludelist))
@@ -460,7 +460,7 @@ class FileManager:
             if time.time() - dbtime > 8 * 86400:
                 logging.warning("Database is more than 8 days old!")
 
-    def _dbput(self, key, value):
+    def _dbput(self, key: str, value: str) -> None:
         """Add/replace an entry in the virtuals database.
 
         This is just small wrapper that abstracts this operations, so
@@ -468,10 +468,10 @@ class FileManager:
         point of change.
 
         """
-        key = key.encode(ENCODING)
-        self.statedb[key] = value.encode(ENCODING)
+        bkey = key.encode(ENCODING)
+        self.statedb[bkey] = value.encode(ENCODING)
 
-    def _dbget(self, key):
+    def _dbget(self, key: str) -> str:
         """Get and entry from the virtuals database.
 
         This is just small wrapper that abstracts this operations, so
@@ -479,14 +479,14 @@ class FileManager:
         point of change.
 
         """
-        key = key.encode(ENCODING)
-        if key in self.statedb:
-            value = self.statedb[key].decode(ENCODING)
+        bkey = key.encode(ENCODING)
+        if bkey in self.statedb:
+            value = self.statedb[bkey].decode(ENCODING)
         else:
             value = None
         return value
 
-    def _dbhas(self, key):
+    def _dbhas(self, key: str) -> bool:
         """Check if we have an entry in the virtuals database.
 
         This is just small wrapper that abstracts this operations, so
@@ -494,10 +494,10 @@ class FileManager:
         point of change.
 
         """
-        key = key.encode(ENCODING)
-        return key in self.statedb
+        bkey = key.encode(ENCODING)
+        return bkey in self.statedb
 
-    def _findfile(self, name):
+    def _findfile(self, name: str) -> SubjectFile:
         """Locate a file's entry in the virtuals database.
 
         Locate the file's entry and returns a SubjectFile with these
@@ -510,7 +510,7 @@ class FileManager:
         virtualdata = self._dbget(key)
         return SubjectFile(name, virtualdata)
 
-    def _ehandler(self, err):
+    def _ehandler(self, err) -> None:
         """Error handler for directory walk.
 
         """
@@ -518,7 +518,7 @@ class FileManager:
         logging.error("Not archiving '%s', cannot stat: '%s'.",
                       err.filename, err.strerror)
 
-    def _helper(self, dirname, names):
+    def _helper(self, dirname: str, names: List[str]) -> None:
         """Helper for the scandir method.
 
         This function scans a directory's entries and processes the
@@ -541,7 +541,7 @@ class FileManager:
                 else:
                     self._scanfile(fullpath)
 
-    def _scandir(self, path):
+    def _scandir(self, path: str) -> None:
         """Gather the files needing backup under a directory.
 
         Arguments:
@@ -558,7 +558,7 @@ class FileManager:
                     dnames.remove(subdir)
             self._helper(dpath, fnames)
 
-    def _scanfile(self, path):
+    def _scanfile(self, path: str) -> List[SubjectFile]:
         """Examine a file for inclusion in the backup."""
         if path in self.scanned:  # pragma: no cover
             logging.error("Already scanned path passed to _scanfile: %s",
@@ -586,14 +586,14 @@ class FileManager:
             logging.debug("No backup needed for %s", path)
             return []
 
-    def _isexcluded(self, path):
+    def _isexcluded(self, path) -> bool:
         """Check to see if a path must be excluded."""
         for mo in self.excludelist:
             if mo.match(path) is not None:
                 return True
         return False
 
-    def checksources(self):
+    def checksources(self) -> None:
         """Examine the list of sources and process them."""
         for item in self.scanlist:
             if self._isexcluded(item) or item in self.scanned:
@@ -607,7 +607,7 @@ class FileManager:
                 self._scanfile(item)
 
     @staticmethod
-    def addparents(item, item_lst):
+    def addparents(item: str, item_lst: List[str]) -> None:
         """Smartly insert a filename into a list.
 
         This function extracts the parents of an item and puts them in
@@ -624,7 +624,7 @@ class FileManager:
         if item not in item_lst:
             item_lst.append(item)
 
-    def notifywritten(self, path):
+    def notifywritten(self, path: str) -> None:
         """Notify that a file has been archived.
 
         This method is called by the BackupManager when the archive
@@ -638,7 +638,7 @@ class FileManager:
         if self.backuplevel == 0 and path in self.subjects:
             self._dbput("file:/%s" % (path,), self.subjects[path].serialize())
 
-    def close(self):
+    def close(self) -> None:
         """Ensure database has been written to disc."""
 
         self.statedb.close()
