@@ -416,7 +416,7 @@ class FileManager():
         self.scanlist = scanlist
         self.excludelist = list(map(re.compile, excludelist))
         statefile = os.path.abspath(statefile)
-        self.excludelist.append(re.compile("^%s$" % statefile))
+        self.excludelist.append(re.compile("^%s$" % statefile)) # type: ignore
         self.maxsize = maxsize
         self.errorlist: List[Tuple[str, str]] = []
         self.filelist: List[str] = []
