@@ -138,6 +138,27 @@ class ConfigurationError(Error):
         return "in file '%s': %s" % (self.filename, self.error)
 
 
+class StatInfo:
+    def __init__(self, mode, user, group, size, mtime, lnkdest):
+        self.mode = mode
+        self.user = user
+        self.group = group
+        self.size = size
+        self.mtime = mtime
+        self.lnkdest = lnkdest
+
+    @staticmethod
+    def StatFile(path):
+        st = os.lstat(path)
+        if stat.S_ISLNK(st.st_mode):
+            lnkdest = os.readlink(path)
+        else:
+            lnkdest = ""
+        return StatInfo(st.st_mode, st.st_uid,
+                        st.st_gid, st.st_size,
+                        st.st_mtime, lnkdest)
+
+
 class FileState():
     """Represents the state of a file.
 
@@ -149,8 +170,7 @@ class FileState():
     compare.
 
     """
-    __slots__ = ('name', 'mode', 'user', 'group', 'size', 'mtime',
-                 'lnkdest', 'virtual', 'force', '_md5', '_sha')
+    __slots__ = ('name', 'statinfo', 'virtual', 'force', '_md5', '_sha')
 
     def __init__(self, **kwargs):
         """Initialize the members of this instance.
@@ -169,16 +189,6 @@ class FileState():
            'serialdata' not in kwargs:  # pragma: no cover
             raise ValueError("Invalid invocation of constructor "
                              "- give either filename or serialdata")
-        self.force = None
-        self.virtual = None
-        self._md5 = None
-        self._sha = None
-        self.mode = None
-        self.size = None
-        self.mtime = None
-        self.lnkdest = None
-        self.user = None
-        self.group = None
 
         if 'filename' in kwargs:
             # This means a physical file
@@ -200,25 +210,19 @@ class FileState():
         self._md5 = None
         self._sha = None
         try:
-            arr = os.lstat(self.name)
-            self.mode = arr.st_mode
-            self.user = arr.st_uid
-            self.group = arr.st_gid
-            self.size = arr.st_size
-            self.mtime = arr.st_mtime
-            if stat.S_ISLNK(self.mode):
-                self.lnkdest = os.readlink(self.name)
-            else:
-                self.lnkdest = ""
+            self.statinfo = StatInfo.StatFile(self.name)
         except (OSError, IOError) as err:
             logging.error("Cannot stat '%s', will force backup: %s",
                           self.name, err)
             self.force = True
+            self.statinfo = None
 
     def _readhashes(self):
         """Compute the hashes of the file's contents."""
 
-        if self.virtual or self.force or not stat.S_ISREG(self.mode):
+        is_non_reg = (self.statinfo is None or
+                      not stat.S_ISREG(self.statinfo.mode))
+        if self.virtual or self.force or is_non_reg:
             self._md5 = ""
             self._sha = ""
         else:
@@ -252,17 +256,23 @@ class FileState():
             "Comparison of two files of the same kind (%u)!" % self.virtual
         if self.force or other.force:
             return False
-        if stat.S_ISLNK(self.mode) and stat.S_ISLNK(other.mode):
+        if self.statinfo is None or other.statinfo is None:
+            # Missing stat info can never be equal
+            return False
+        a = self.statinfo
+        b = other.statinfo
+        # Same uid/gid
+        if a.user != b.user or a.group != b.group:
+            return False
+        # Same permissions
+        if stat.S_IMODE(a.mode) != stat.S_IMODE(b.mode):
+            return False
+        if stat.S_ISLNK(a.mode) and stat.S_ISLNK(b.mode):
             # Both files are symlinks
-            return self.lnkdest == other.lnkdest and \
-                   self.user == other.user and \
-                   self.group == other.group and \
-                   stat.S_IMODE(self.mode) == stat.S_IMODE(other.mode)
-        elif stat.S_ISREG(self.mode) and stat.S_ISREG(other.mode):
+            return a.lnkdest == b.lnkdest
+        elif stat.S_ISREG(a.mode) and stat.S_ISREG(a.mode):
             # Both files are regular files
-            # I hope here python optimizes in cases where the sizes differ,
-            # and doesn't compute the hashes in case it is not needed :)
-            return self.size == other.size and \
+            return a.size == b.size and \
                    self.md5 == other.md5 and \
                    self.sha == other.sha
         else:
@@ -276,12 +286,13 @@ class FileState():
         """Return a stringified version of self, useful for debugging."""
         ret = ("""<FileState instance for %s file '%s'""" %
                (self.virtual and "virtual" or "physical", self.name))
+        si = self.statinfo
         if self.force:
             ret += ", unreadable -> will be selected>"
         else:
             ret += (", size: %u, u/g: %s/%s, md5: %s, sha: %s, mtime: %u>" %
-                    (self.size, self.user, self.group, self.md5,
-                     self.sha, self.mtime))
+                    (si.size, si.user, si.group, si.md5,
+                     si.sha, si.mtime))
         return ret
 
     def _gethash(self, kind):
@@ -306,14 +317,24 @@ class FileState():
     def serialize(self):
         """Encode the file state as a string"""
 
+        si = self.statinfo
+        if si is None:
+            mode = user = group = size = mtime = lnkdest = ""
+        else:
+            mode = str(si.mode)
+            user = str(si.user)
+            group = str(si.group)
+            size = str(si.size)
+            mtime = str(si.mtime)
+            lnkdest = si.lnkdest
         out = ""
         out += "%s\0" % self.name
-        out += "%i\0" % self.mode
-        out += "%s\0" % self.user
-        out += "%s\0" % self.group
-        out += "%i\0" % self.size
-        out += "%i\0" % self.mtime
-        out += "%s\0" % self.lnkdest
+        out += "%s\0" % mode
+        out += "%s\0" % user
+        out += "%s\0" % group
+        out += "%s\0" % size
+        out += "%s\0" % mtime
+        out += "%s\0" % lnkdest
         out += "%s\0" % self.md5
         out += "%s" % self.sha
 
@@ -326,7 +347,7 @@ class FileState():
             = text.split('\0')
         mode = int(mode)
         size = int(size)
-        mtime = int(mtime)
+        mtime = float(mtime)
         if len(md5sum) not in (0, 32) or \
            len(shasum) not in (0, 40):  # pragma: no cover
             raise ValueError("Invalid hash length!")
@@ -334,12 +355,8 @@ class FileState():
         self.virtual = True
         self.force = False
         self.name = name
-        self.mode = mode
-        self.user = int(user)
-        self.group = int(group)
-        self.size = size
-        self.mtime = mtime
-        self.lnkdest = lnkdest
+        self.statinfo = StatInfo(mode, int(user), int(group),
+                                 size, mtime, lnkdest)
         self._md5 = md5sum
         self._sha = shasum
 
@@ -348,6 +365,9 @@ class SubjectFile():
     """A file to be backed up"""
 
     __slots__ = ('_backup', 'name', 'virtual', 'physical')
+
+    physical: FileState
+    virtual: Optional[FileState]
 
     def __init__(self, name, virtualdata=None):
         """Constructor for the SubjectFile.
@@ -557,10 +577,12 @@ class FileManager():
         self.scanned.append(path)
         logging.debug("Examining path %s", path)
         sf = self._findfile(path)
-        if (self.maxsize > 0 and sf.physical.size and
-                sf.physical.size > self.maxsize):
+        phy_size = (sf.physical.statinfo.size
+                    if sf.physical.statinfo is not None else 0)
+        if (self.maxsize > 0 and phy_size and
+                phy_size > self.maxsize):
             logging.warning("Skipping path %s due to size limit (%s > %s)",
-                            path, sf.physical.size, self.maxsize)
+                            path, phy_size, self.maxsize)
             return []
         elif sf.needsbackup:
             logging.debug("Selecting path %s", path)
