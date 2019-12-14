@@ -643,3 +643,37 @@ def test_invalid_format(env):
     with pytest.raises(bakonf.Error,
                        match="Unexpected format"):
         bakonf.BackupManager(opts).run()
+
+
+def test_filestate_args():
+    with pytest.raises(ValueError):
+        bakonf.FileState(filename="a", serialdata="b")
+    with pytest.raises(ValueError):
+        bakonf.FileState()
+
+
+def test_filestate_eq_args(env):
+    with env.config.open("a") as f:
+        f.write("include: [%s]\n" % env.fs)
+    fa = env.fs.join("a")
+    fa.write(FOO)
+    fstate = bakonf.FileState(filename=fa)
+    assert fstate != "a"
+
+
+def test_filestate_str(env):
+    with env.config.open("a") as f:
+        f.write("include: [%s]\n" % env.fs)
+    fa = env.fs.join("a")
+    fa.write(FOO)
+    fstate = bakonf.FileState(filename=fa)
+    assert "checksum" in str(fstate)
+
+
+def test_subjectfile_str(env):
+    with env.config.open("a") as f:
+        f.write("include: [%s]\n" % env.fs)
+    fa = env.fs.join("a")
+    fa.write(FOO)
+    sf = bakonf.SubjectFile(fa)
+    assert "checksum" in str(sf)

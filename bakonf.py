@@ -189,11 +189,11 @@ class FileState():
         given data.
 
         """
-        if len(kwargs) != 1:  # pragma: no cover
+        if len(kwargs) != 1:
             raise ValueError("Invalid invocation of constructor "
                              "- give either filename or serialdata")
         if 'filename' not in kwargs and \
-           'serialdata' not in kwargs:  # pragma: no cover
+           'serialdata' not in kwargs:
             raise ValueError("Invalid invocation of constructor "
                              "- give either filename or serialdata")
 
@@ -252,7 +252,7 @@ class FileState():
 
         """
         # pylint: disable=R0911
-        if type(self) != type(other):  # pragma: no cover pylint: disable=C0123
+        if type(self) != type(other):  # pylint: disable=C0123
             return NotImplemented
         assert self.virtual != other.virtual, \
             "Comparison of two files of the same kind (%u)!" % self.virtual
@@ -283,7 +283,7 @@ class FileState():
         """Reflexive function for __eq__."""
         return not self == other
 
-    def __str__(self) -> str:  # pragma: no cover (only debug)
+    def __str__(self) -> str:
         """Return a stringified version of self, useful for debugging."""
         ret = ("""<FileState instance for %s file '%s'""" %
                (self.virtual and "virtual" or "physical", self.name))
@@ -387,7 +387,7 @@ class SubjectFile:
             self._backup = True
             self.virtual = None
 
-    def __str__(self):  # pragma: no cover (only debug)
+    def __str__(self):
         """Nice string version of self"""
         return ("<SubjectFile instance, virtual %s, physical %s>" %
                 (self.virtual, self.physical))
