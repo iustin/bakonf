@@ -282,11 +282,18 @@ class FileState():
         ret = ("""<FileState instance for %s file '%s'""" %
                (self.virtual and "virtual" or "physical", self.name))
         si = self.statinfo
+        if si is None:
+            user = group = mtime = size = "n/a"
+        else:
+            user = si.user
+            group = si.group
+            mtime = str(si.mtime)
+            size = str(si.size)
         if self.force:
             ret += ", unreadable -> will be selected>"
         else:
-            ret += (", size: %u, u/g: %s/%s, checksum: %s, mtime: %u>" %
-                    (si.size, si.user, si.group, self.checksum, si.mtime))
+            ret += (", size: %s, u/g: %s/%s, checksum: %s, mtime: %s>" %
+                    (size, user, group, self.checksum, mtime))
         return ret
 
     @property
