@@ -5,7 +5,6 @@ cache: pip
 
 # let's test as many versions as we can!
 python:
-  - "3.5"
   - "3.6"
   - "3.7"
   - "3.8"

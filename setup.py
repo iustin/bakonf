@@ -4,7 +4,7 @@ setup(
   name="bakonf",
   version="0.7.0",
   scripts=["bakonf.py"],
-  python_requires=">=3.5",
+  python_requires=">=3.6",
   install_requires="bsddb3",
 
   author="Iustin Pop",

@@ -30,7 +30,7 @@ it can store output of arbitrary commands, for example:
 
 Requirements:
 
-- Python 3.5+ (for Python 2.7, use version 0.6)
+- Python 3.6+ (for Python 2.7, use version 0.6)
 - PyYaml
 - bsdd3
 

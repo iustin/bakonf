@@ -5,7 +5,8 @@ Version 0.8.0
 
 Migrated most of the code to type checks, which uncovered a lot of
 temporal assumptions, which led to further refactoring of the
-internals to be more robust.
+internals to be more robust. Sadly it requires Python 3.6 as minimum,
+so switch to that.
 
 Incompatible changes:
 
