@@ -170,10 +170,9 @@ class FileState():
     compare.
 
     """
-    __slots__ = ('name', 'statinfo', 'virtual', 'force', '_md5', '_sha')
+    __slots__ = ('name', 'statinfo', 'virtual', 'force', '_checksum')
 
-    _md5: Optional[str]
-    _sha: Optional[str]
+    _checksum: Optional[str]
 
     def __init__(self, **kwargs) -> None:
         """Initialize the members of this instance.
@@ -210,8 +209,7 @@ class FileState():
         """
         self.force = False
         self.virtual = False
-        self._md5 = None
-        self._sha = None
+        self._checksum = None
         try:
             self.statinfo = StatInfo.StatFile(self.name)
         except (OSError, IOError) as err:
@@ -220,37 +218,32 @@ class FileState():
             self.force = True
             self.statinfo = None
 
-    def _readhashes(self):
-        """Compute the hashes of the file's contents."""
+    def _readchecksum(self):
+        """Compute the checksum of the file's contents."""
 
         is_non_reg = (self.statinfo is None or
                       not stat.S_ISREG(self.statinfo.mode))
         if self.virtual or self.force or is_non_reg:
-            self._md5 = ""
-            self._sha = ""
+            self._checksum = ""
         else:
             try:
-                md5hash = hashlib.md5()
-                shahash = hashlib.sha1()
+                checksum = hashlib.sha512()
                 with open(self.name, "rb") as fh:
                     data = fh.read(65535)
                     while data:
-                        md5hash.update(data)
-                        shahash.update(data)
+                        checksum.update(data)
                         data = fh.read(65535)
-                self._md5 = md5hash.hexdigest()
-                self._sha = shahash.hexdigest()
+                self._checksum = checksum.hexdigest()
             except IOError:
-                self._md5 = ""
-                self._sha = ""
+                self._checksum = ""
 
     def __eq__(self, other) -> bool:
         """Compare this entry with another one, usually for the same file.
 
         In case of symbolic links, return equal if destination,
         permissions and user/group are the same.  In case of regular
-        files, return equal if md5 are the same.  Other cases are not
-        yet implemented, and return false.
+        files, return equal if the checksums are the same.  Other
+        cases are not yet implemented, and return false.
 
         """
         if type(self) != type(other):  # pragma: no cover pylint: disable=C0123
@@ -276,8 +269,7 @@ class FileState():
         elif stat.S_ISREG(a.mode) and stat.S_ISREG(a.mode):
             # Both files are regular files
             return a.size == b.size and \
-                   self.md5 == other.md5 and \
-                   self.sha == other.sha
+                   self.checksum == other.checksum
         else:
             return False
 
@@ -293,29 +285,17 @@ class FileState():
         if self.force:
             ret += ", unreadable -> will be selected>"
         else:
-            ret += (", size: %u, u/g: %s/%s, md5: %s, sha: %s, mtime: %u>" %
-                    (si.size, si.user, si.group, si.md5,
-                     si.sha, si.mtime))
+            ret += (", size: %u, u/g: %s/%s, checksum: %s, mtime: %u>" %
+                    (si.size, si.user, si.group, si.checksum, si.mtime))
         return ret
 
-    def _gethash(self, kind) -> str:
-        """Return a cached hash or force compute it."""
-        val = getattr(self, kind)
-        if val is None:
-            self._readhashes()
-            return getattr(self, kind)
-        else:
-            return val
-
     @property
-    def md5(self) -> str:
-        """The MD5 hash of the file's contents."""
-        return self._gethash('_md5')
-
-    @property
-    def sha(self) -> str:
-        """The SHA hash of the file's contents."""
-        return self._gethash('_sha')
+    def checksum(self) -> str:
+        """Returns the checksum of the file's contents."""
+        if self._checksum is None:
+            self._readchecksum()
+        assert self._checksum is not None
+        return self._checksum
 
     def serialize(self) -> str:
         """Encode the file state as a string"""
@@ -338,30 +318,27 @@ class FileState():
         out += "%s\0" % size
         out += "%s\0" % mtime
         out += "%s\0" % lnkdest
-        out += "%s\0" % self.md5
-        out += "%s" % self.sha
+        out += "%s" % self.checksum
 
         return out
 
     def unserialize(self, text) -> None:
         """Decode the file state from a string"""
         # If the following raises ValueError, the parent must! catch it
-        (name, mode, user, group, size, mtime, lnkdest, md5sum, shasum) \
+        (name, mode, user, group, size, mtime, lnkdest, checksum) \
             = text.split('\0')
         mode = int(mode)
         size = int(size)
         mtime = float(mtime)
-        if len(md5sum) not in (0, 32) or \
-           len(shasum) not in (0, 40):  # pragma: no cover
-            raise ValueError("Invalid hash length!")
+        if len(checksum) not in (0, 128):  # pragma: no cover
+            raise ValueError("Invalid checksum length!")
         # Here we should have all the data needed
         self.virtual = True
         self.force = False
         self.name = name
         self.statinfo = StatInfo(mode, int(user), int(group),
                                  size, mtime, lnkdest)
-        self._md5 = md5sum
-        self._sha = shasum
+        self._checksum = checksum
 
 
 class SubjectFile:

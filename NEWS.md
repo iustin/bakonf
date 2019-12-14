@@ -1,3 +1,17 @@
+Version 0.8.0
+-------------
+
+*unreleased*
+
+Migrated most of the code to type checks, which uncovered a lot of
+temporal assumptions, which led to further refactoring of the
+internals to be more robust.
+
+Incompatible changes:
+
+- checksums migrated from dual md5/sha1 to sha512; this means all
+  files will be backed up again.
+
 Version 0.7.0
 -------------
 
