@@ -286,7 +286,7 @@ class FileState():
             ret += ", unreadable -> will be selected>"
         else:
             ret += (", size: %u, u/g: %s/%s, checksum: %s, mtime: %u>" %
-                    (si.size, si.user, si.group, si.checksum, si.mtime))
+                    (si.size, si.user, si.group, self.checksum, si.mtime))
         return ret
 
     @property
