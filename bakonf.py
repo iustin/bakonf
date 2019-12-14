@@ -46,6 +46,8 @@ from typing import List, Tuple, Dict, Optional
 import yaml
 import bsddb3
 
+# pylint: disable=C0103
+
 _COPY = ("Written by Iustin Pop\n\n"
          "Copyright (C) 2002, 2004, 2008, 2009, 2010 Iustin Pop\n"
          "This is free software; see the source for copying conditions."
@@ -139,6 +141,7 @@ class ConfigurationError(Error):
 
 
 class StatInfo:
+    """Holds stat-related attributes for an inode."""
     def __init__(self, mode, user, group, size, mtime, lnkdest):
         self.mode = mode
         self.user = user
@@ -148,7 +151,8 @@ class StatInfo:
         self.lnkdest = lnkdest
 
     @staticmethod
-    def StatFile(path):
+    def FromFile(path: str) -> 'StatInfo':
+        """Builds a StatInfo from an actual file."""
         st = os.lstat(path)
         if stat.S_ISLNK(st.st_mode):
             lnkdest = os.readlink(path)
@@ -172,6 +176,7 @@ class FileState():
     """
     __slots__ = ('name', 'statinfo', 'virtual', 'force', '_checksum')
 
+    statinfo: Optional[StatInfo]
     _checksum: Optional[str]
 
     def __init__(self, **kwargs) -> None:
@@ -211,7 +216,7 @@ class FileState():
         self.virtual = False
         self._checksum = None
         try:
-            self.statinfo = StatInfo.StatFile(self.name)
+            self.statinfo = StatInfo.FromFile(self.name)
         except (OSError, IOError) as err:
             logging.error("Cannot stat '%s', will force backup: %s",
                           self.name, err)
@@ -246,6 +251,7 @@ class FileState():
         cases are not yet implemented, and return false.
 
         """
+        # pylint: disable=R0911
         if type(self) != type(other):  # pragma: no cover pylint: disable=C0123
             return NotImplemented
         assert self.virtual != other.virtual, \
