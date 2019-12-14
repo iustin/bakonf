@@ -10,6 +10,7 @@ so switch to that.
 
 Incompatible changes:
 
+- at least Python 3.6 is required
 - checksums migrated from dual md5/sha1 to sha512; this means all
   files will be backed up again.
 
