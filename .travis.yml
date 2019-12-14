@@ -15,7 +15,7 @@ python:
 install:
 - pip install PyYAML pytest bsddb3
 - pip install pytest-cov coveralls codecov
-- pip install mypy pep8 pylint
+- pip install mypy pycodestyle pylint
 
 # the tests + coverage
 script:

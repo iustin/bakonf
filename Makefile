@@ -49,7 +49,7 @@ dist: lint $(DOCS)
 
 .PHONY: lint
 lint:
-	pep8 $(PY_FILES)
+	pycodestyle $(PY_FILES)
 	pylint $(PY_FILES)
 
 .PHONY: coverage
