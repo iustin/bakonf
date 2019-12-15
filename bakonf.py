@@ -821,13 +821,13 @@ class BackupManager:
                      ntime - stime, len(fs_list))
         logging.info("Archiving files...")
         donelist = self.fs_donelist
-        archive.add(name="/", arcname="filesystem/", recursive=0)
+        archive.add(name="/", arcname="filesystem/", recursive=False)
         for path in fs_list:
             arcx = os.path.join("filesystem", path.lstrip("/"))
             try:
                 archive.add(name=path,
                             arcname=arcx,
-                            recursive=0)
+                            recursive=False)
             except IOError as err:
                 errorlist.append((path, err.strerror))
                 logging.error("Cannot read '%s': '%s'. Not archived.",
