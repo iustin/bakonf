@@ -719,20 +719,21 @@ class BackupManager:
         self.cmd_outputs: List[CmdOutput] = []
         self.fs_statefile: Optional[str] = None
         self.fs_donelist: List[str] = []
-        self._cur_cfgfile: Optional[str] = None
         self._parseconf(options.configfile)
 
-    def _check_val(self, val, msg) -> None:
+    @staticmethod
+    def _check_val(src: str, val: Optional[Any], msg: str) -> None:
         """Checks that a given value is well-formed.
 
         Right now this is just not empty (None).
 
         """
         if val is None:
-            raise ConfigurationError(self._cur_cfgfile, "%s: %r" % (msg, val))
+            raise ConfigurationError(src, "%s: %r" % (msg, val))
 
     def _get_extra_sources(self,
-                           mainfile: str, maincfg) -> List[Tuple[str, Any]]:
+                           mainfile: str,
+                           maincfg: Any) -> List[Tuple[str, Any]]:
         """Helper for the _parseconf.
 
         This function scans the given config for a 'configs' mapping
@@ -743,7 +744,7 @@ class BackupManager:
         """
         elist = [(mainfile, maincfg)]
         for incl in maincfg.get("configs", []):
-            self._check_val(incl, "Invalid configs entry")
+            self._check_val(mainfile, incl, "Invalid configs entry")
             logging.debug("Expanding configuration pattern '%s'", incl)
             for fname in glob.glob(incl):
                 logging.debug("Reading extra config file '%s'", fname)
@@ -763,7 +764,6 @@ class BackupManager:
             raise ConfigurationError(filename,
                                      "Error reading file: %s" % str(err))
 
-        self._cur_cfgfile = filename
         if self.options.statefile is None:
             vpath = config.get("database", None)
             if vpath is None:
@@ -784,17 +784,16 @@ class BackupManager:
 
         # process scanning targets
         for cfile, conft in tlist:
-            self._cur_cfgfile = cfile
             logging.debug("Processing config file '%s'", cfile)
             # process file system include paths
             for scan_path in conft.get("include", []):
-                self._check_val(scan_path, "Invalid include entry")
+                self._check_val(cfile, scan_path, "Invalid include entry")
                 paths = [os.path.abspath(i) for i in glob.glob(scan_path)]
                 self.fs_include += [ensure_text(i) for i in paths]
 
             # process file system exclude paths
             for noscan_path in conft.get("exclude", []):
-                self._check_val(noscan_path, "Invalid exclude entry")
+                self._check_val(cfile, noscan_path, "Invalid exclude entry")
                 self.fs_exclude.append(ensure_text(noscan_path))
 
             # command output
@@ -802,7 +801,7 @@ class BackupManager:
             for entry in commands:
                 cmd_line = ensure_text(entry.get("cmd", None))
                 cmd_dest = ensure_text(entry.get("dest", None))
-                self._check_val(cmd_line, "Invalid 'cmd' key")
+                self._check_val(cfile, cmd_line, "Invalid 'cmd' key")
                 self.cmd_outputs.append(CmdOutput(cmd_line, cmd_dest))
 
     def _addfilesys(self, archive: Archive) -> Tuple[FileManager, int, int]:
