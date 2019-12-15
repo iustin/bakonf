@@ -41,7 +41,7 @@ import collections
 from io import BytesIO
 import hashlib
 
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Any
 
 import yaml
 import bsddb3
@@ -83,7 +83,7 @@ Stats = collections.namedtuple(
     "Stats", "filename file_count file_errors cmd_count cmd_errors")
 
 
-def ensure_text(val):
+def ensure_text(val) -> str:
     """Ensure a string/bytes/unicode object is a 'text' object."""
     if isinstance(val, bytes):
         # this is an encoded (bytes) value, need to decode
@@ -91,7 +91,7 @@ def ensure_text(val):
     return val
 
 
-def ensure_bytes(val):
+def ensure_bytes(val) -> bytes:
     """Ensure a string/bytes/unicode object is a 'bytes' object."""
     if isinstance(val, str):
         # this is a decoded (text) value, need to encode
@@ -99,7 +99,8 @@ def ensure_bytes(val):
     return val
 
 
-def genfakefile(sio=None, name=None, user='root', group='root', mtime=None):
+def genfakefile(sio=None, name=None,
+                user='root', group='root', mtime=None) -> tarfile.TarInfo:
     """Generate a fake TarInfo object from a BytesIO object."""
     ti = tarfile.TarInfo()
     ti.name = name
@@ -112,7 +113,7 @@ def genfakefile(sio=None, name=None, user='root', group='root', mtime=None):
     return ti
 
 
-def storefakefile(archive, contents, name):
+def storefakefile(archive, contents, name: str) -> None:
     """Stores a string as a fake file in the archive."""
 
     sio = BytesIO(ensure_bytes(contents))
@@ -126,23 +127,24 @@ class Error(Exception):
         Exception.__init__(self)
         self.error = error
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.error)
 
 
 class ConfigurationError(Error):
     """Exception for invalid configuration files."""
-    def __init__(self, filename, error):
+    def __init__(self, filename, error) -> None:
         Error.__init__(self, error)
         self.filename = filename
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "in file '%s': %s" % (self.filename, self.error)
 
 
 class StatInfo:
     """Holds stat-related attributes for an inode."""
-    def __init__(self, mode, user, group, size, mtime, lnkdest):
+    def __init__(self, mode: int, user: int, group: int,
+                 size: int, mtime: float, lnkdest: str) -> None:
         self.mode = mode
         self.user = user
         self.group = group
@@ -163,7 +165,7 @@ class StatInfo:
                         st.st_mtime, lnkdest)
 
 
-class FileState():
+class FileState:
     """Represents the state of a file.
 
     An instance of this class represents the state of a file, either
@@ -223,7 +225,7 @@ class FileState():
             self.force = True
             self.statinfo = None
 
-    def _readchecksum(self):
+    def _readchecksum(self) -> None:
         """Compute the checksum of the file's contents."""
 
         is_non_reg = (self.statinfo is None or
@@ -291,8 +293,8 @@ class FileState():
         if si is None:
             user = group = mtime = size = "n/a"
         else:
-            user = si.user
-            group = si.group
+            user = str(si.user)
+            group = str(si.group)
             mtime = str(si.mtime)
             size = str(si.size)
         if self.force:
@@ -335,14 +337,14 @@ class FileState():
 
         return out
 
-    def unserialize(self, text) -> None:
+    def unserialize(self, text: str) -> None:
         """Decode the file state from a string"""
         # If the following raises ValueError, the parent must! catch it
-        (name, mode, user, group, size, mtime, lnkdest, checksum) \
+        (name, s_mode, user, group, s_size, s_mtime, lnkdest, checksum) \
             = text.split('\0')
-        mode = int(mode)
-        size = int(size)
-        mtime = float(mtime)
+        mode = int(s_mode)
+        size = int(s_size)
+        mtime = float(s_mtime)
         if len(checksum) not in (0, 128):  # pragma: no cover
             raise ValueError("Invalid checksum length!")
         # Here we should have all the data needed
@@ -362,7 +364,7 @@ class SubjectFile:
     physical: FileState
     virtual: Optional[FileState]
 
-    def __init__(self, name, virtualdata=None) -> None:
+    def __init__(self, name: str, virtualdata=None) -> None:
         """Constructor for the SubjectFile.
 
         Creates a physical member based on the given filename. If
@@ -387,7 +389,7 @@ class SubjectFile:
             self._backup = True
             self.virtual = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Nice string version of self"""
         return ("<SubjectFile instance, virtual %s, physical %s>" %
                 (self.virtual, self.physical))
@@ -558,7 +560,7 @@ class FileManager:
                     dnames.remove(subdir)
             self._helper(dpath, fnames)
 
-    def _scanfile(self, path: str) -> List[SubjectFile]:
+    def _scanfile(self, path: str) -> List[str]:
         """Examine a file for inclusion in the backup."""
         if path in self.scanned:  # pragma: no cover
             logging.error("Already scanned path passed to _scanfile: %s",
@@ -644,7 +646,7 @@ class FileManager:
         self.statedb.close()
 
 
-class CmdOutput():
+class CmdOutput:
     """Denotes a command result to be stored in an archive.
 
     This class represents the element storeoutput in the configuration
@@ -653,7 +655,7 @@ class CmdOutput():
     """
     __slots__ = ('command', 'destination', 'errors')
 
-    def __init__(self, command, destination):
+    def __init__(self, command, destination) -> None:
         """Constructor for the CmdOutput class."""
         self.command = command
         if destination is None:
@@ -661,7 +663,7 @@ class CmdOutput():
         self.destination = destination.lstrip("/")
 
     @staticmethod
-    def _sanitize_name(path):
+    def _sanitize_name(path: str) -> str:
         """Makes sure path can be used as a plain filename.
 
         This just replaces slashes with underscores.
@@ -696,7 +698,7 @@ class CmdOutput():
         return err
 
 
-class BackupManager():
+class BackupManager:
     """Main class for this program.
 
     Class which deals with top-level issues regarding archiving:
@@ -704,19 +706,19 @@ class BackupManager():
     command output, etc.
 
     """
-    def __init__(self, options):
+    def __init__(self, options) -> None:
         """Constructor for BackupManager."""
         self.options = options
         self.fs_include: List[str] = []
         self.fs_exclude: List[str] = []
         self.fs_maxsize = -1
         self.cmd_outputs: List[CmdOutput] = []
-        self.fs_statefile = None
+        self.fs_statefile: Optional[str] = None
         self.fs_donelist: List[str] = []
-        self._cur_cfgfile = None
+        self._cur_cfgfile: Optional[str] = None
         self._parseconf(options.configfile)
 
-    def _check_val(self, val, msg):
+    def _check_val(self, val, msg) -> None:
         """Checks that a given value is well-formed.
 
         Right now this is just not empty (None).
@@ -725,7 +727,7 @@ class BackupManager():
         if val is None:
             raise ConfigurationError(self._cur_cfgfile, "%s: %r" % (msg, val))
 
-    def _get_extra_sources(self, mainfile, maincfg):
+    def _get_extra_sources(self, mainfile, maincfg) -> List[Tuple[str, Any]]:
         """Helper for the _parseconf.
 
         This function scans the given config for a 'configs' mapping
@@ -745,7 +747,7 @@ class BackupManager():
                 elist.append((fname, subcfg))
         return elist
 
-    def _parseconf(self, filename):
+    def _parseconf(self, filename: str) -> None:
         """Parse the configuration file."""
 
         logging.debug("Opening configuration file '%s'", filename)
@@ -798,7 +800,7 @@ class BackupManager():
                 self._check_val(cmd_line, "Invalid 'cmd' key")
                 self.cmd_outputs.append(CmdOutput(cmd_line, cmd_dest))
 
-    def _addfilesys(self, archive):
+    def _addfilesys(self, archive) -> Tuple[FileManager, int, int]:
         """Add the selected files to the archive.
 
         This function adds the files which need to be backed up to the
@@ -839,7 +841,7 @@ class BackupManager():
         storefakefile(archive, "\n".join(contents), "unarchived_files.lst")
         return (fm, len(donelist), len(errorlist))
 
-    def _addcommands(self, archive):
+    def _addcommands(self, archive) -> Tuple[int, int]:
         """Add the command outputs to the archive.
 
         This functions adds the configured command outputs to the
@@ -859,7 +861,7 @@ class BackupManager():
         storefakefile(archive, "\n".join(contents), "commands_with_errors.lst")
         return (len(self.cmd_outputs), len(errorlist))
 
-    def _addsignature(self, archive):
+    def _addsignature(self, archive) -> None:
         """Add a signature to the archive.
 
         This adds a README file to the archive containing the
@@ -888,7 +890,7 @@ class BackupManager():
         storefakefile(archive, my_hostname, "host")
         storefakefile(archive, PKG_VERSION, "version")
 
-    def run(self):
+    def run(self) -> Stats:
         """Create the archive.
 
         This method creates the archive with the given options from
@@ -934,6 +936,7 @@ class BackupManager():
             raise Error("Unexpected compression error: %s" % str(err))
 
         # Archiving files
+        fs_manager: Optional[FileManager]
         if opts.do_files:
             (fs_manager, f_stored, f_skipped) = self._addfilesys(tarh)
         else:
@@ -1046,7 +1049,7 @@ See the manpage for more information. Defaults are:
     return op
 
 
-def real_main():  # pragma: no cover
+def real_main() -> None:  # pragma: no cover
     """Main function"""
 
     os.umask(0o077)
@@ -1074,7 +1077,7 @@ def real_main():  # pragma: no cover
     bm.run()
 
 
-def main():  # pragma: no cover
+def main() -> None:  # pragma: no cover
     """Wrapper over real_main()."""
     try:
         real_main()
