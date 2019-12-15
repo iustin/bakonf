@@ -78,6 +78,9 @@ FORMATS = {
 
 HAVE_LZMA = sys.hexversion >= 0x03030000
 
+# Type alias
+Archive = tarfile.TarFile
+
 
 Stats = collections.namedtuple(
     "Stats", "filename file_count file_errors cmd_count cmd_errors")
@@ -114,7 +117,7 @@ def genfakefile(sio: BinaryIO, name: str,
     return ti
 
 
-def storefakefile(archive, contents, name: str) -> None:
+def storefakefile(archive: Archive, contents: AnyStr, name: str) -> None:
     """Stores a string as a fake file in the archive."""
 
     sio = BytesIO(ensure_bytes(contents))
@@ -675,7 +678,7 @@ class CmdOutput:
             path = path.replace(os.path.altsep, "_")
         return path
 
-    def store(self, archive) -> Optional[str]:
+    def store(self, archive: Archive) -> Optional[str]:
         """Store the output of my command in the archive."""
         logging.debug("Executing command %s, storing output as %s",
                       self.command, self.destination)
@@ -728,7 +731,8 @@ class BackupManager:
         if val is None:
             raise ConfigurationError(self._cur_cfgfile, "%s: %r" % (msg, val))
 
-    def _get_extra_sources(self, mainfile, maincfg) -> List[Tuple[str, Any]]:
+    def _get_extra_sources(self,
+                           mainfile: str, maincfg) -> List[Tuple[str, Any]]:
         """Helper for the _parseconf.
 
         This function scans the given config for a 'configs' mapping
@@ -801,7 +805,7 @@ class BackupManager:
                 self._check_val(cmd_line, "Invalid 'cmd' key")
                 self.cmd_outputs.append(CmdOutput(cmd_line, cmd_dest))
 
-    def _addfilesys(self, archive) -> Tuple[FileManager, int, int]:
+    def _addfilesys(self, archive: Archive) -> Tuple[FileManager, int, int]:
         """Add the selected files to the archive.
 
         This function adds the files which need to be backed up to the
@@ -842,7 +846,7 @@ class BackupManager:
         storefakefile(archive, "\n".join(contents), "unarchived_files.lst")
         return (fm, len(donelist), len(errorlist))
 
-    def _addcommands(self, archive) -> Tuple[int, int]:
+    def _addcommands(self, archive: Archive) -> Tuple[int, int]:
         """Add the command outputs to the archive.
 
         This functions adds the configured command outputs to the
@@ -862,7 +866,7 @@ class BackupManager:
         storefakefile(archive, "\n".join(contents), "commands_with_errors.lst")
         return (len(self.cmd_outputs), len(errorlist))
 
-    def _addsignature(self, archive) -> None:
+    def _addsignature(self, archive: Archive) -> None:
         """Add a signature to the archive.
 
         This adds a README file to the archive containing the
