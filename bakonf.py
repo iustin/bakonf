@@ -41,7 +41,7 @@ import collections
 from io import BytesIO
 import hashlib
 
-from typing import List, Tuple, Dict, Optional, Any
+from typing import List, Tuple, Dict, Optional, Any, AnyStr, BinaryIO
 
 import yaml
 import bsddb3
@@ -83,24 +83,25 @@ Stats = collections.namedtuple(
     "Stats", "filename file_count file_errors cmd_count cmd_errors")
 
 
-def ensure_text(val) -> str:
+def ensure_text(val: AnyStr) -> str:
     """Ensure a string/bytes/unicode object is a 'text' object."""
     if isinstance(val, bytes):
         # this is an encoded (bytes) value, need to decode
-        val = val.decode(ENCODING)
+        return val.decode(ENCODING)
     return val
 
 
-def ensure_bytes(val) -> bytes:
+def ensure_bytes(val: AnyStr) -> bytes:
     """Ensure a string/bytes/unicode object is a 'bytes' object."""
     if isinstance(val, str):
         # this is a decoded (text) value, need to encode
-        val = val.encode(ENCODING)
+        return val.encode(ENCODING)
     return val
 
 
-def genfakefile(sio=None, name=None,
-                user='root', group='root', mtime=None) -> tarfile.TarInfo:
+def genfakefile(sio: BinaryIO, name: str,
+                user: str = 'root', group: str = 'root',
+                mtime: float = None) -> tarfile.TarInfo:
     """Generate a fake TarInfo object from a BytesIO object."""
     ti = tarfile.TarInfo()
     ti.name = name
@@ -117,7 +118,7 @@ def storefakefile(archive, contents, name: str) -> None:
     """Stores a string as a fake file in the archive."""
 
     sio = BytesIO(ensure_bytes(contents))
-    ff = genfakefile(sio, name=name)
+    ff = genfakefile(sio, name)
     archive.addfile(ff, sio)
 
 
