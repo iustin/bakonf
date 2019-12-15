@@ -710,6 +710,8 @@ class BackupManager:
     command output, etc.
 
     """
+    fs_statefile: str
+
     def __init__(self, options) -> None:
         """Constructor for BackupManager."""
         self.options = options
@@ -717,7 +719,6 @@ class BackupManager:
         self.fs_exclude: List[str] = []
         self.fs_maxsize = -1
         self.cmd_outputs: List[CmdOutput] = []
-        self.fs_statefile: Optional[str] = None
         self.fs_donelist: List[str] = []
         self._parseconf(options.configfile)
 
