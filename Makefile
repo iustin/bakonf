@@ -60,6 +60,9 @@ coverage:
 test:
 	PYTHONPATH=. pytest-3 tests/
 
+.PHONY: check
+check: test mypy lint
+
 .PHONY: ci
 ci:
 	while inotifywait -e CLOSE_WRITE bakonf.py tests/test_bakonf.py; do make -k lint test coverage; done
