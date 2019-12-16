@@ -180,7 +180,7 @@ class FileState:
     compare.
 
     """
-    __slots__ = ('name', 'statinfo', 'virtual', 'force', '_checksum')
+    __slots__ = ('name', 'statinfo', 'virtual', '_checksum')
 
     statinfo: Optional[StatInfo]
     _checksum: Optional[str]
@@ -219,7 +219,6 @@ class FileState:
         also read the link target.
 
         """
-        self.force = False
         self.virtual = False
         self._checksum = None
         try:
@@ -227,15 +226,13 @@ class FileState:
         except (OSError, IOError) as err:
             logging.error("Cannot stat '%s', will force backup: %s",
                           self.name, err)
-            self.force = True
             self.statinfo = None
 
     def _readchecksum(self) -> None:
         """Compute the checksum of the file's contents."""
 
-        is_non_reg = (self.statinfo is None or
-                      not stat.S_ISREG(self.statinfo.mode))
-        if self.virtual or self.force or is_non_reg:
+        if self.virtual or self.statinfo is None or \
+           not stat.S_ISREG(self.statinfo.mode):
             self._checksum = ""
         else:
             try:
@@ -263,10 +260,8 @@ class FileState:
             return NotImplemented
         assert self.virtual != other.virtual, \
             "Comparison of two files of the same kind (%u)!" % self.virtual
-        if self.force or other.force:
-            return False
         if self.statinfo is None or other.statinfo is None:
-            # Missing stat info can never be equal
+            # Missing stat info (=force) can never be equal
             return False
         a = self.statinfo
         b = other.statinfo
@@ -296,17 +291,10 @@ class FileState:
                (self.virtual and "virtual" or "physical", self.name))
         si = self.statinfo
         if si is None:
-            user = group = mtime = size = "n/a"
-        else:
-            user = str(si.user)
-            group = str(si.group)
-            mtime = str(si.mtime)
-            size = str(si.size)
-        if self.force:
             ret += ", unreadable -> will be selected>"
         else:
-            ret += (", size: %s, u/g: %s/%s, checksum: %s, mtime: %s>" %
-                    (size, user, group, self.checksum, mtime))
+            ret += (", size: %d, u/g: %d/%d, checksum: %s, mtime: %f>" %
+                    (si.size, si.user, si.group, self.checksum, si.mtime))
         return ret
 
     @property
@@ -354,7 +342,6 @@ class FileState:
             raise ValueError("Invalid checksum length!")
         # Here we should have all the data needed
         self.virtual = True
-        self.force = False
         self.name = name
         self.statinfo = StatInfo(mode, int(user), int(group),
                                  size, mtime, lnkdest)
