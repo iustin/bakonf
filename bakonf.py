@@ -185,7 +185,9 @@ class FileState:
     statinfo: Optional[StatInfo]
     _checksum: Optional[str]
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self,
+                 filename: Optional[str] = None,
+                 serialdata: Optional[str] = None) -> None:
         """Initialize the members of this instance.
 
         Either the filename or the serialdata must be given, as
@@ -195,20 +197,19 @@ class FileState:
         given data.
 
         """
-        if len(kwargs) != 1:
-            raise ValueError("Invalid invocation of constructor "
-                             "- give either filename or serialdata")
-        if 'filename' not in kwargs and \
-           'serialdata' not in kwargs:
+        if filename is not None and serialdata is not None:
             raise ValueError("Invalid invocation of constructor "
                              "- give either filename or serialdata")
 
-        if 'filename' in kwargs:
+        if filename is not None:
             # This means a physical file
-            self.name = kwargs['filename']
+            self.name = filename
             self._readdisk()
+        elif serialdata is not None:
+            self.unserialize(serialdata)
         else:
-            self.unserialize(kwargs['serialdata'])
+            raise ValueError("Invalid invocation of constructor "
+                             "- give either filename or serialdata")
 
     def _readdisk(self) -> None:
         """Read the state from disk.
