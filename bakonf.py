@@ -104,13 +104,13 @@ def ensure_bytes(val: AnyStr) -> bytes:
 
 def genfakefile(sio: BinaryIO, name: str,
                 user: str = 'root', group: str = 'root',
-                mtime: float = None) -> tarfile.TarInfo:
+                mtime: Optional[float] = None) -> tarfile.TarInfo:
     """Generate a fake TarInfo object from a BytesIO object."""
     ti = tarfile.TarInfo()
     ti.name = name
     ti.uname = user
     ti.gname = group
-    ti.mtime = mtime or time.time()  # type: ignore
+    ti.mtime = mtime if mtime is not None else time.time()  # type: ignore
     sio.seek(0, 2)
     ti.size = sio.tell()
     sio.seek(0, 0)
@@ -127,7 +127,7 @@ def storefakefile(archive: Archive, contents: AnyStr, name: str) -> None:
 
 class Error(Exception):
     """Basic exception type."""
-    def __init__(self, error) -> None:
+    def __init__(self, error: str) -> None:
         Exception.__init__(self)
         self.error = error
 
@@ -249,7 +249,7 @@ class FileState:
             except IOError:
                 self._checksum = ""
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> Any:
         """Compare this entry with another one, usually for the same file.
 
         In case of symbolic links, return equal if destination,
@@ -282,11 +282,11 @@ class FileState:
         elif stat.S_ISREG(a.mode) and stat.S_ISREG(a.mode):
             # Both files are regular files
             return a.size == b.size and \
-                   self.checksum == other.checksum
+                self.checksum == other.checksum
         else:
             return False
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: Any) -> bool:
         """Reflexive function for __eq__."""
         return not self == other
 
@@ -369,7 +369,7 @@ class SubjectFile:
     physical: FileState
     virtual: Optional[FileState]
 
-    def __init__(self, name: str, virtualdata=None) -> None:
+    def __init__(self, name: str, virtualdata: Optional[str] = None) -> None:
         """Constructor for the SubjectFile.
 
         Creates a physical member based on the given filename. If
@@ -467,9 +467,14 @@ class FileManager:
                 raise ConfigurationError(statefile,
                                          "Invalid database version '%s'" %
                                          currvers)
-            dbtime = float(self._dbget(DBKEY_DATE))
-            if time.time() - dbtime > 8 * 86400:
-                logging.warning("Database is more than 8 days old!")
+            dbtime_val = self._dbget(DBKEY_DATE)
+            if dbtime_val is not None:
+                dbtime = float(dbtime_val)
+                if time.time() - dbtime > 8 * 86400:
+                    logging.warning("Database is more than 8 days old!")
+            else:
+                logging.warning("Database missing timestamp,"
+                                " might be very old!")
 
     def _dbput(self, key: str, value: str) -> None:
         """Add/replace an entry in the virtuals database.
@@ -482,7 +487,7 @@ class FileManager:
         bkey = key.encode(ENCODING)
         self.statedb[bkey] = value.encode(ENCODING)
 
-    def _dbget(self, key: str) -> str:
+    def _dbget(self, key: str) -> Optional[str]:
         """Get and entry from the virtuals database.
 
         This is just small wrapper that abstracts this operations, so
@@ -492,7 +497,7 @@ class FileManager:
         """
         bkey = key.encode(ENCODING)
         if bkey in self.statedb:
-            value = self.statedb[bkey].decode(ENCODING)
+            value: Optional[str] = self.statedb[bkey].decode(ENCODING)
         else:
             value = None
         return value
@@ -664,7 +669,7 @@ class CmdOutput:
     """
     __slots__ = ('command', 'destination', 'errors')
 
-    def __init__(self, command, destination) -> None:
+    def __init__(self, command: str, destination: str) -> None:
         """Constructor for the CmdOutput class."""
         self.command = command
         if destination is None:
