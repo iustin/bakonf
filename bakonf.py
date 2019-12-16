@@ -137,7 +137,7 @@ class Error(Exception):
 
 class ConfigurationError(Error):
     """Exception for invalid configuration files."""
-    def __init__(self, filename, error) -> None:
+    def __init__(self, filename: str, error: str) -> None:
         Error.__init__(self, error)
         self.filename = filename
 
@@ -429,13 +429,17 @@ class FileManager:
                  'backuplevel', 'subjects', 'scanned',
                  'filelist', 'memberlist', 'maxsize')
 
-    def __init__(self, scanlist, excludelist, statefile, backuplevel,
-                 maxsize) -> None:
+    def __init__(self,
+                 scanlist: List[str],
+                 excludelist: List[str],
+                 statefile: str,
+                 backuplevel: int,
+                 maxsize: int) -> None:
         """Constructor for class FileManager."""
         self.scanlist = scanlist
-        self.excludelist = list(map(re.compile, excludelist))
+        self.excludelist = [re.compile(i) for i in excludelist]
         statefile = os.path.abspath(statefile)
-        self.excludelist.append(re.compile("^%s$" % statefile))  # type: ignore
+        self.excludelist.append(re.compile("^%s$" % statefile))
         self.maxsize = maxsize
         self.errorlist: List[Tuple[str, str]] = []
         self.filelist: List[str] = []
@@ -516,7 +520,7 @@ class FileManager:
         virtualdata = self._dbget(key)
         return SubjectFile(name, virtualdata)
 
-    def _ehandler(self, err) -> None:
+    def _ehandler(self, err: IOError) -> None:
         """Error handler for directory walk.
 
         """
@@ -592,7 +596,7 @@ class FileManager:
             logging.debug("No backup needed for %s", path)
             return []
 
-    def _isexcluded(self, path) -> bool:
+    def _isexcluded(self, path: str) -> bool:
         """Check to see if a path must be excluded."""
         for mo in self.excludelist:
             if mo.match(path) is not None:
@@ -712,12 +716,12 @@ class BackupManager:
     """
     fs_statefile: str
 
-    def __init__(self, options) -> None:
+    def __init__(self, options: argparse.Namespace) -> None:
         """Constructor for BackupManager."""
         self.options = options
         self.fs_include: List[str] = []
         self.fs_exclude: List[str] = []
-        self.fs_maxsize = -1
+        self.fs_maxsize: int = -1
         self.cmd_outputs: List[CmdOutput] = []
         self.fs_donelist: List[str] = []
         self._parseconf(options.configfile)
@@ -973,7 +977,7 @@ class BackupManager:
         return Stats(final_tar, f_stored, f_skipped, c_stored, c_skipped)
 
 
-def build_options():
+def build_options() -> argparse.ArgumentParser:
     """Builds the options structure"""
 
     my_hostname = os.uname()[1]
