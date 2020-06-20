@@ -654,7 +654,7 @@ class CmdOutput:
     file. It will store the output of a command in the archive.
 
     """
-    __slots__ = ('command', 'destination', 'errors')
+    __slots__ = ('command', 'destination')
 
     def __init__(self, command: str, destination: str) -> None:
         """Constructor for the CmdOutput class."""
