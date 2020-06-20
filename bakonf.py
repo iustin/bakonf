@@ -680,6 +680,8 @@ class CmdOutput:
         logging.debug("Executing command %s, storing output as %s",
                       self.command, self.destination)
         err: Optional[str] = None
+        # pylint: disable=W1510
+        # because we do the error code handling ourselves.
         child = subprocess.run(self.command, shell=True,
                                stdin=subprocess.DEVNULL,
                                stdout=subprocess.PIPE,
