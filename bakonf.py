@@ -680,14 +680,13 @@ class CmdOutput:
         logging.debug("Executing command %s, storing output as %s",
                       self.command, self.destination)
         err: Optional[str] = None
-        child = subprocess.Popen(self.command, shell=True,
-                                 stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT,
-                                 cwd="/")
-        child.stdin.close()
-        output = child.stdout.read()
-        status = child.wait()
+        child = subprocess.run(self.command, shell=True,
+                               stdin=subprocess.DEVNULL,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT,
+                               cwd="/")
+        output = child.stdout
+        status = child.returncode
         if status != 0:
             if status > 0:
                 err = "exited with status %i" % status
