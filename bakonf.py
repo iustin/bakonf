@@ -761,7 +761,7 @@ class BackupManager:
                 config = yaml.safe_load(stream)
         except Exception as err:
             raise ConfigurationError(filename,
-                                     "Error reading file: %s" % str(err))
+                                     "Error reading file") from err
 
         if self.options.statefile is None:
             vpath = config.get("database", None)
@@ -778,7 +778,7 @@ class BackupManager:
                 self.fs_maxsize = int(msize)
             except (ValueError, TypeError) as err:
                 raise ConfigurationError(filename, "Invalid maxsize"
-                                         " value: %s" % err)
+                                         " value") from err
         tlist = self._get_extra_sources(filename, config)
 
         # process scanning targets
@@ -934,9 +934,9 @@ class BackupManager:
             tarh = tarfile.open(name=final_tar, mode=tarmode,
                                 format=tar_format)
         except EnvironmentError as err:
-            raise Error("Can't create archive '%s': %s" % (final_tar, err))
+            raise Error("Can't create archive '%s'" % final_tar) from err
         except tarfile.CompressionError as err:
-            raise Error("Unexpected compression error: %s" % str(err))
+            raise Error("Unexpected compression error") from err
 
         # Archiving files
         fs_manager: Optional[FileManager]
