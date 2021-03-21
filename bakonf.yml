@@ -1,5 +1,6 @@
 database: /var/lib/bakonf/state.db
-configs: /etc/bakonf/conf.d/*.yml
+configs:
+- /etc/bakonf/conf.d/*.yml
 include:
 - /etc
 - /usr/etc
