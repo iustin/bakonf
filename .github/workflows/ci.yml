@@ -13,7 +13,12 @@ jobs:
           - '3.8'
           - '3.9'
           - '3.10-dev'
-      fail-fast: true
+        include:
+          # mkdocs doesn't have yet a release compatible with 3.10
+          - os: ubuntu-latest
+            python-version: '3.10-dev'
+            skipDocs: ${{ true }}
+      fail-fast: false
 
     steps:
       - name: Checkout
@@ -41,6 +46,7 @@ jobs:
           pip install PyYAML pytest bsddb3
           pip install pytest-cov codecov
           pip install mypy pycodestyle pylint
+          pip install mkdocs
 
       - name: Test types
         run: make mypy
@@ -71,3 +77,7 @@ jobs:
         with:
           name: code-coverage-${{ matrix.os }}-${{ matrix.python-version }}
           path: codecov-report.txt
+
+      - name: Build documentation
+        run: make site
+        if: ${{ ! matrix.skipDocs }}
