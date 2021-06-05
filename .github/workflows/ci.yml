@@ -1,0 +1,73 @@
+on: [push]
+name: CI
+jobs:
+  build:
+    name: Build and test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version:
+          - '3.6'
+          - '3.7'
+          - '3.8'
+          - '3.9'
+          - '3.10-dev'
+      fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          # This path is specific to Ubuntu
+          path: ~/.cache/pip
+          # Look to see if there is a cache hit for the corresponding requirements file
+          key: v1-pip-${{ runner.os }}-${{ matrix.python-version }}
+          restore-keys: |
+            v1-pip-${{ runner.os }}
+            v1-pip-
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -yy libdb-dev
+          pip install PyYAML pytest bsddb3
+          pip install pytest-cov codecov
+          pip install mypy pycodestyle pylint
+
+      - name: Test types
+        run: make mypy
+
+      - name: Lint checking
+        run: make lint
+
+      - name: Run tests
+        run: python -m pytest tests/
+
+      - name: Run tests with coverage
+        run: python -m pytest --cov=bakonf --cov-branch tests/
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          #files: ./coverage1.xml,./coverage2.xml
+          #directory: ./coverage/reports/
+          #flags: unittests
+          #env_vars: OS,PYTHON
+          name: codecov-python-${{ matrix.python-version }}
+          #fail_ci_if_error: true
+          path_to_write_report: ./codecov-report.txt
+          #verbose: true
+
+      - name: Archive code coverage result
+        uses: 'actions/upload-artifact@v2'
+        with:
+          name: code-coverage-${{ matrix.os }}-${{ matrix.python-version }}
+          path: codecov-report.txt
