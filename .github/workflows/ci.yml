@@ -61,6 +61,7 @@ jobs:
           pip install pytest-cov codecov
           pip install mypy pycodestyle pylint
           pip install mkdocs
+          mypy --install-types
 
       - name: Test types
         run: make mypy
