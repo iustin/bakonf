@@ -10,6 +10,9 @@
 ![GitHub commits since latest release](https://img.shields.io/github/commits-since/iustin/bakonf/latest)
 ![GitHub last commit](https://img.shields.io/github/last-commit/iustin/bakonf)
 
+**NOTE**: This repository is archived, as there's no need for such a tool
+anymore, given how many proper backup solutions exist nowadays.
+
 _bakonf_ is a small script designed to make minimal backups of the
 *configuration* files of a GNU/Linux or Unix-like system. Its aim is
 to use various methods to reduce the size of the backup to a
